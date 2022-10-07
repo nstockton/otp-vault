@@ -1,5 +1,5 @@
 {
-  "id": "authenticator_data/database.schema",
+  "id": "otp_vault_data/database.schema",
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "OTP Secrets Database",
   "description": "A database of OTP secrets.",

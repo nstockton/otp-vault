@@ -10,8 +10,8 @@ from __future__ import annotations
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
-# Authenticator Modules:
-from authenticator.otp import hotp, totp
+# OTP Vault Modules:
+from otp_vault.otp import hotp, totp
 
 
 # SAMPLE_KEY generated with str(base64.b32encode(secrets.token_bytes(20)), "utf-8")
@@ -36,22 +36,22 @@ class TestOTP(TestCase):
 		for i in range(6, 11):
 			self.assertEqual(hotp(SAMPLE_KEY, 42, length=i), sample_code[-i:])
 
-	@patch("authenticator.otp.time.time", Mock(return_value=SAMPLE_TIME))
+	@patch("otp_vault.otp.time.time", Mock(return_value=SAMPLE_TIME))
 	def test_totp_when_default_arguments(self) -> None:
 		self.assertEqual(totp(SAMPLE_KEY), "362173")
 
-	@patch("authenticator.otp.time.time", Mock(return_value=SAMPLE_TIME))
+	@patch("otp_vault.otp.time.time", Mock(return_value=SAMPLE_TIME))
 	def test_totp_when_interval_specified(self) -> None:
 		self.assertEqual(totp(SAMPLE_KEY, interval=60), "489376")
 
-	@patch("authenticator.otp.time.time", Mock(return_value=SAMPLE_TIME))
+	@patch("otp_vault.otp.time.time", Mock(return_value=SAMPLE_TIME))
 	def test_totp_when_delta_specified(self) -> None:
 		self.assertEqual(totp(SAMPLE_KEY, delta=3), "618886")
 
-	@patch("authenticator.otp.time.time", Mock(return_value=SAMPLE_TIME))
+	@patch("otp_vault.otp.time.time", Mock(return_value=SAMPLE_TIME))
 	def test_totp_when_length_specified(self) -> None:
 		self.assertEqual(totp(SAMPLE_KEY, length=8), "69362173")
 
-	@patch("authenticator.otp.time.time", Mock(return_value=SAMPLE_TIME))
+	@patch("otp_vault.otp.time.time", Mock(return_value=SAMPLE_TIME))
 	def test_totp_when_multiple_arguments_specified(self) -> None:
 		self.assertEqual(totp(SAMPLE_KEY, interval=90, delta=5, length=9), "099326450")

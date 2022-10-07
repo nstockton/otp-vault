@@ -11,20 +11,20 @@ from contextlib import ExitStack
 from unittest import TestCase
 from unittest.mock import Mock, mock_open, patch
 
-# Authenticator Modules:
-from authenticator.database import Database
-from authenticator.main import add_secret, change_password, search_secrets
+# OTP Vault Modules:
+from otp_vault.database import Database
+from otp_vault.main import add_secret, change_password, search_secrets
 
 
 SAMPLE_PASSWORD: str = "test_password"
 SAMPLE_FILENAME: str = "testdatabase-6ca2100554e249998edbe204445a9875"
 
 
-@patch("authenticator.main.sys.stdout", Mock())  # Prevent output from print.
+@patch("otp_vault.main.sys.stdout", Mock())  # Prevent output from print.
 class TestMain(TestCase):
 	def test_change_password_when_valid_password(self) -> None:
 		mock_error_handler: Mock = Mock()
-		with patch("authenticator.database.open", mock_open()) as mopen:
+		with patch("otp_vault.database.open", mock_open()) as mopen:
 			database: Database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 			change_password(database, mock_error_handler, "some_valid_password")
 			mock_error_handler.assert_not_called()
@@ -32,7 +32,7 @@ class TestMain(TestCase):
 
 	def test_change_password_when_invalid_password(self) -> None:
 		mock_error_handler: Mock = Mock()
-		with patch("authenticator.database.open", mock_open()) as mopen:
+		with patch("otp_vault.database.open", mock_open()) as mopen:
 			database: Database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 			change_password(database, mock_error_handler, " invalid_password ")
 			mock_error_handler.assert_called_once()
@@ -40,7 +40,7 @@ class TestMain(TestCase):
 
 	def test_add_secret_when_unique_secret_and_valid_inputs(self) -> None:
 		mock_error_handler: Mock = Mock()
-		with patch("authenticator.database.open", mock_open()) as mopen:
+		with patch("otp_vault.database.open", mock_open()) as mopen:
 			database: Database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 			add_secret(database, mock_error_handler, SAMPLE_PASSWORD, "test_label", "test_key")
 			self.assertIn(("test_label", "test_key"), database.secrets)
@@ -63,7 +63,7 @@ class TestMain(TestCase):
 
 	def test_add_secret_when_invalid_password(self) -> None:
 		mock_error_handler: Mock = Mock()
-		with patch("authenticator.database.open", mock_open()) as mopen:
+		with patch("otp_vault.database.open", mock_open()) as mopen:
 			database: Database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 			add_secret(database, mock_error_handler, " invalid_password ", "test_label", "test_key")
 			mock_error_handler.assert_called_once()
@@ -89,8 +89,8 @@ class TestMain(TestCase):
 		mock_error_handler: Mock = Mock()
 		with ExitStack() as cm:
 			mock_save = cm.enter_context(patch.object(Database, "save"))
-			mock_print = cm.enter_context(patch("authenticator.main.print"))
-			mock_totp = cm.enter_context(patch("authenticator.main.totp"))
+			mock_print = cm.enter_context(patch("otp_vault.main.print"))
+			mock_totp = cm.enter_context(patch("otp_vault.main.totp"))
 			database: Database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 			database.add_secret(SAMPLE_PASSWORD, "test_label", "test_key")
 			mock_save.reset_mock()
@@ -103,7 +103,7 @@ class TestMain(TestCase):
 	def test_search_secrets_when_no_results(self) -> None:
 		mock_error_handler: Mock = Mock()
 		with ExitStack() as cm:
-			mock_sys_exit = cm.enter_context(patch("authenticator.main.sys.exit"))
+			mock_sys_exit = cm.enter_context(patch("otp_vault.main.sys.exit"))
 			mock_save = cm.enter_context(patch.object(Database, "save"))
 			database: Database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 			search_secrets(database, mock_error_handler, SAMPLE_PASSWORD, "unknown label")
@@ -114,8 +114,8 @@ class TestMain(TestCase):
 		mock_error_handler: Mock = Mock()
 		with ExitStack() as cm:
 			mock_save = cm.enter_context(patch.object(Database, "save"))
-			mock_totp = cm.enter_context(patch("authenticator.main.totp"))
-			mock_set_clipboard = cm.enter_context(patch("authenticator.main.set_clipboard"))
+			mock_totp = cm.enter_context(patch("otp_vault.main.totp"))
+			mock_set_clipboard = cm.enter_context(patch("otp_vault.main.set_clipboard"))
 			mock_totp.return_value = "123456"
 			database: Database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 			database.add_secret(SAMPLE_PASSWORD, "test_label", "test_key")

@@ -9,8 +9,8 @@ from __future__ import annotations
 # Built-in Modules:
 from unittest import TestCase
 
-# Authenticator Modules:
-from authenticator.encryption import (
+# OTP Vault Modules:
+from otp_vault.encryption import (
 	InvalidEncryptedDataError,
 	InvalidHashError,
 	WrongPasswordError,

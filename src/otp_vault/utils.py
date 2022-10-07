@@ -13,7 +13,7 @@ import sys
 from typing import Union
 
 
-DATA_DIRECTORY: str = "authenticator_data"
+DATA_DIRECTORY: str = "otp_vault_data"
 
 
 def get_freezer() -> Union[str, None]:

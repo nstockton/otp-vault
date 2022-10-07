@@ -6,18 +6,18 @@
 	build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-	name = "authenticator"
+	name = "otp-vault"
 	version = "0.0.0"
-	description = "An authenticator app, compatible with Google Authenticator."
+	description = "A CLI-based OTP authenticator app."
 	authors = ["Nick Stockton <nstockton@users.noreply.github.com>"]
 	license = "MPL-2.0"
 	readme = "README.md"
-	homepage = "https://github.com/nstockton/authenticator"
-	repository = "https://github.com/nstockton/authenticator"
-	keywords = ["authenticator", "totp", "hotp", "password", "google"]
+	homepage = "https://github.com/nstockton/otp-vault"
+	repository = "https://github.com/nstockton/otp-vault"
+	keywords = ["authenticator", "OTP", "TOTP", "HOTP", "password"]
 	classifiers = []
 	packages = [
-		{include = "authenticator", from = "src"},
+		{include = "otp_vault", from = "src"},
 	]
 	include = [
 		{path = "tests/*", format = "sdist"},
@@ -47,7 +47,7 @@
 	types-jsonschema = "^4.4"
 
 [tool.poetry.scripts]
-	authenticator = "authenticator.main:run"
+	otpv = "otp_vault.main:run"
 
 [tool.poetry-dynamic-versioning]
 	enable = true
@@ -86,10 +86,10 @@
 	]
 
 [tool.coverage.run]
-	source = ["authenticator"]
+	source = ["otp_vault"]
 	omit = [
-		"src/authenticator/__main__.py",
-		"src/authenticator/clipboard.py",
+		"src/otp_vault/__main__.py",
+		"src/otp_vault/clipboard.py",
 	]
 
 [tool.flake8]
@@ -175,14 +175,14 @@
 		"tap",
 	]
 	# The heading to display for first-party imports.
-	import_heading_firstparty = "Authenticator Modules:"
+	import_heading_firstparty = "OTP Vault Modules:"
 	# Override known first-party imports.
-	known_first_party = ["authenticator"]
+	known_first_party = ["otp_vault"]
 	# The heading to display for local imports.
 	import_heading_localfolder = "Local Modules:"
 
 [tool.mypy]
-	files = ["src/authenticator", "tests"]
+	files = ["src/otp_vault", "tests"]
 	exclude = '^$'
 	local_partial_types = true
 	strict = true

@@ -15,9 +15,9 @@ from unittest.mock import Mock, PropertyMock, mock_open, patch
 # Third-party Modules:
 from jsonschema.exceptions import ValidationError
 
-# Authenticator Modules:
-from authenticator.database import DATA_DIRECTORY, Database, DatabaseError, Secret
-from authenticator.encryption import decrypt
+# OTP Vault Modules:
+from otp_vault.database import DATA_DIRECTORY, Database, DatabaseError, Secret
+from otp_vault.encryption import decrypt
 
 
 SAMPLE_PASSWORD: str = "test_password"
@@ -64,7 +64,7 @@ class TestDatabase(TestCase):
 			database.secrets.append([1])  # type: ignore[arg-type]
 			database._validate_json()
 
-	@patch("authenticator.database.os")
+	@patch("otp_vault.database.os")
 	def test_load_when_location_does_not_exist(self, mock_os: Mock) -> None:
 		mock_os.path.exists.return_value = False
 		mock_os.path.isdir.return_value = False
@@ -78,28 +78,28 @@ class TestDatabase(TestCase):
 		self.assertEqual(len(database.secrets), 0)
 		self.assertEqual(len(database), 1)  # Empty secrets list was added by the call to database.secrets.
 
-	@patch("authenticator.database.os")
+	@patch("otp_vault.database.os")
 	def test_load_when_location_is_a_directory(self, mock_os: Mock) -> None:
 		mock_os.path.exists.return_value = True
 		mock_os.path.isdir.return_value = True
 		with self.assertRaises(DatabaseError):
 			Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 
-	@patch("authenticator.database.os")
+	@patch("otp_vault.database.os")
 	def test_load_when_corrupt_data(self, mock_os: Mock) -> None:
 		mock_os.path.exists.return_value = True
 		mock_os.path.isdir.return_value = False
 		with ExitStack() as cm:
-			cm.enter_context(patch("authenticator.database.open", mock_open(read_data=b"invalid")))
+			cm.enter_context(patch("otp_vault.database.open", mock_open(read_data=b"invalid")))
 			cm.enter_context(self.assertRaises(DatabaseError))
 			Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 
-	@patch("authenticator.database.os")
+	@patch("otp_vault.database.os")
 	def test_load_when_valid_data(self, mock_os: Mock) -> None:
 		mock_os.path.exists.return_value = True
 		mock_os.path.isdir.return_value = False
 		with ExitStack() as cm:
-			cm.enter_context(patch("authenticator.database.open", mock_open(read_data=SAMPLE_DATA)))
+			cm.enter_context(patch("otp_vault.database.open", mock_open(read_data=SAMPLE_DATA)))
 			mock_validate_json = cm.enter_context(patch.object(Database, "_validate_json"))
 			database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 			mock_validate_json.assert_called_once()
@@ -108,14 +108,14 @@ class TestDatabase(TestCase):
 			self.assertEqual(len(database.secrets), 1)
 			self.assertIn(("test_label", "test_key"), database.secrets)
 
-	@patch("authenticator.database.os")
+	@patch("otp_vault.database.os")
 	def test_load_when_valid_data_needs_password_rehash(self, mock_os: Mock) -> None:
 		mock_os.path.exists.return_value = True
 		mock_os.path.isdir.return_value = False
 		with ExitStack() as cm:
-			cm.enter_context(patch("authenticator.database.open", mock_open(read_data=SAMPLE_DATA)))
+			cm.enter_context(patch("otp_vault.database.open", mock_open(read_data=SAMPLE_DATA)))
 			cm.enter_context(patch.object(Database, "_validate_json"))
-			mock_decrypt = cm.enter_context(patch("authenticator.database.decrypt"))
+			mock_decrypt = cm.enter_context(patch("otp_vault.database.decrypt"))
 			mock_save = cm.enter_context(patch.object(Database, "save"))
 			checksum, pw_hash = str(SAMPLE_DATA, "utf-8").splitlines()[:2]
 			enc_data: bytes = SAMPLE_DATA.splitlines()[2]
@@ -125,7 +125,7 @@ class TestDatabase(TestCase):
 			mock_save.assert_called_once_with(SAMPLE_PASSWORD)
 
 	def test_save_when_invalid_password(self) -> None:
-		with patch("authenticator.database.open", mock_open()) as mopen:
+		with patch("otp_vault.database.open", mock_open()) as mopen:
 			database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 			database.secrets.append(Secret("test_label", "test_key"))
 			with self.assertRaises(ValueError):
@@ -136,12 +136,12 @@ class TestDatabase(TestCase):
 				database.save("invalid\tpassword")
 			mopen.assert_not_called()
 
-	@patch("authenticator.database.os")
+	@patch("otp_vault.database.os")
 	def test_save_when_valid_database(self, mock_os: Mock) -> None:
 		mock_os.path.isdir.return_value = False
 		saved_data: bytearray = bytearray()
 		# Test saving a database.
-		with patch("authenticator.database.open", mock_open()) as mopen:
+		with patch("otp_vault.database.open", mock_open()) as mopen:
 			mopen.return_value.write.side_effect = lambda d: saved_data.extend(d)
 			mock_os.path.exists.return_value = False
 			database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
@@ -150,7 +150,7 @@ class TestDatabase(TestCase):
 			mopen.assert_called_once_with(database.file_path, "wb")
 		# Test loading the saved data succeeds.
 		with ExitStack() as cm:
-			cm.enter_context(patch("authenticator.database.open", mock_open(read_data=bytes(saved_data))))
+			cm.enter_context(patch("otp_vault.database.open", mock_open(read_data=bytes(saved_data))))
 			cm.enter_context(patch.object(Database, "_validate_json"))
 			mock_os.path.exists.return_value = True
 			database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)

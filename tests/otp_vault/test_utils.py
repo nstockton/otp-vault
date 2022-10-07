@@ -12,13 +12,13 @@ import sys
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
-# Authenticator Modules:
-from authenticator import utils
+# OTP Vault Modules:
+from otp_vault import utils
 
 
 class TestUtils(TestCase):
-	@patch("authenticator.utils._imp")
-	@patch("authenticator.utils.sys")
+	@patch("otp_vault.utils._imp")
+	@patch("otp_vault.utils.sys")
 	def test_get_freezer(self, mock_sys: Mock, mock_imp: Mock) -> None:
 		del mock_sys.frozen
 		del mock_sys._MEIPASS
@@ -45,7 +45,7 @@ class TestUtils(TestCase):
 	def test_is_frozen(self) -> None:
 		self.assertIs(utils.is_frozen(), False)
 
-	@patch("authenticator.utils.is_frozen")
+	@patch("otp_vault.utils.is_frozen")
 	def test_get_directory_path(self, mock_is_frozen: Mock) -> None:
 		subdirectory: tuple[str, ...] = ("level1", "level2")
 		frozen_dir_name: str = os.path.dirname(sys.executable)
