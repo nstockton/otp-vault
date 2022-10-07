@@ -1,0 +1,24 @@
+{
+  "id": "authenticator_data/database.schema",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "OTP Secrets Database",
+  "description": "A database of OTP secrets.",
+  "type": "object",
+  "patternProperties": {
+    "schema_version": {
+      "type": "integer"
+    },
+    "secrets": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
