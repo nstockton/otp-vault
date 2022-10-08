@@ -37,6 +37,8 @@ class ArgumentParser(Tap):  # pragma: no cover
 	"""Copy a secret key to the clipboard (requires --search)."""
 	delete: Optional[int] = None
 	"""Delete a secret key (requires --search)."""
+	update: Optional[tuple[int, str]] = None
+	"""Update a secret key with a new label (requires --search)."""
 
 	def process_args(self) -> None:
 		# Work around for defining a mutually exclusive group in TAP.configure throws
@@ -51,12 +53,16 @@ class ArgumentParser(Tap):  # pragma: no cover
 				raise ValueError(f"{arg} not in argument buffer.")
 		exclusive_args.sort(key=list(self.argument_buffer).index)
 		specified_exclusive_args: list[str] = [i for i in exclusive_args if getattr(self, i) is not None]
-		if self.copy is not None and "".join(specified_exclusive_args) != "search":
-			self.error(f"--copy {'can only' if specified_exclusive_args else 'must'} be used with --search")
-		elif self.delete is not None and "".join(specified_exclusive_args) != "search":
-			self.error(f"--delete {'can only' if specified_exclusive_args else 'must'} be used with --search")
-		elif self.copy is not None and self.delete is not None:
-			self.error("['copy', 'delete'] are mutually exclusive")
+		specified_exclusive_search_args: list[str] = [
+			i for i in ("copy", "delete", "update") if getattr(self, i) is not None
+		]
+		if len(specified_exclusive_search_args) > 1:
+			self.error(f"{specified_exclusive_search_args} are mutually exclusive")
+		elif specified_exclusive_search_args and "".join(specified_exclusive_args) != "search":
+			self.error(
+				f"--{specified_exclusive_search_args[0]} {'can only' if specified_exclusive_args else 'must'} "
+				+ "be used with --search"
+			)
 		elif len(specified_exclusive_args) > 1:
 			self.error(f"{specified_exclusive_args} are mutually exclusive")
 
@@ -78,6 +84,7 @@ class ArgumentParser(Tap):  # pragma: no cover
 		self.add_argument("-s", "--search", metavar="text")
 		self.add_argument("-c", "--copy", metavar="item")
 		self.add_argument("-d", "--delete", metavar="item")
+		self.add_argument("-u", "--update", nargs=2, metavar=("item", "new_label"))
 
 
 def change_password(database: Database, error_handler: Callable[[str], None], password: str) -> None:
@@ -108,28 +115,41 @@ def search_secrets(
 	*,
 	copy: Optional[int] = None,
 	delete: Optional[int] = None,
+	update: Optional[tuple[int, str]] = None,
 ) -> None:
 	results: tuple[tuple[str, str], ...] = database.search_secrets(text)
 	if not results:
 		sys.exit("No results found.")  # Prints to STDERR and exits with status code 1.
-	elif copy is not None and not 1 <= copy <= len(results):
-		error_handler(f"Item {copy} to copy not in range 1-{len(results)}")
-	elif delete is not None and not 1 <= delete <= len(results):
-		error_handler(f"Item {delete} to delete not in range 1-{len(results)}")
-	else:
-		for i, result in enumerate(results):
-			label, key = result
-			if copy is None and delete is None:
-				# Just searching.
-				print(f"{i + 1}: {label}, {totp(key)}")
-			elif copy is not None and i + 1 == copy:
+	for i, result in enumerate(results):
+		label, key = result
+		if copy is not None:
+			if not 1 <= copy <= len(results):
+				error_handler(f"Item {copy} to copy not in range 1-{len(results)}")
+				break
+			elif i + 1 == copy:
 				set_clipboard(totp(key))
-				print(f"Item {i + 1} ({label}) copied to clipboard.")
+				print(f"Item {copy} ({label}) copied to clipboard.")
 				break
-			elif delete is not None and i + 1 == delete:
+		elif delete is not None:
+			if not 1 <= delete <= len(results):
+				error_handler(f"Item {delete} to delete not in range 1-{len(results)}")
+				break
+			elif i + 1 == delete:
 				database.delete_secret(password, label)
-				print(f"Item {i + 1} ({label}) deleted.")
+				print(f"Item {delete} ({label}) deleted.")
 				break
+		elif update is not None:
+			# update is a list containing the item number and the new label.
+			if not 1 <= update[0] <= len(results):
+				error_handler(f"Item {update[0]} to update not in range 1-{len(results)}")
+				break
+			elif i + 1 == update[0]:
+				database.update_secret(password, label, update[1])
+				print(f"Item {update[0]} ({label}) updated to {update[1]}.")
+				break
+		else:
+			# Just searching.
+			print(f"{i + 1}: {label}, {totp(key)}")
 
 
 def main(parsed_args: ArgumentParser) -> None:  # pragma: no cover
@@ -147,6 +167,7 @@ def main(parsed_args: ArgumentParser) -> None:  # pragma: no cover
 			parsed_args.search,
 			copy=parsed_args.copy,
 			delete=parsed_args.delete,
+			update=parsed_args.update,
 		)
 	else:
 		parsed_args.error("Please specify an option")

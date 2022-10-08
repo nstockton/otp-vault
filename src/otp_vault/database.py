@@ -233,6 +233,22 @@ class Database(MutableMapping[str, Any]):
 			self.secrets.remove(secret)
 		self.save(password)
 
+	def update_secret(self, password: str, label: str, new_label: str) -> None:
+		"""
+		Updates a secret with a new label.
+
+		Args:
+			password: The password for encrypting the database.
+			label: The label of the secret to be updated.
+			new_label: The new label to use for the secret.
+		"""
+		self._check_secret_label_whitespace(label)
+		self._check_secret_label_whitespace(new_label)
+		for secret in self.search_secrets(label, exact_match=True):
+			index: int = self.secrets.index(secret)
+			self.secrets[index] = Secret(new_label, secret.key)
+		self.save(password)
+
 	def __getitem__(self, key: str) -> Any:
 		return self._database[key]
 

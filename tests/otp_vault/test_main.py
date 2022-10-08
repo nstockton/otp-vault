@@ -12,7 +12,7 @@ from unittest import TestCase
 from unittest.mock import Mock, mock_open, patch
 
 # OTP Vault Modules:
-from otp_vault.database import Database
+from otp_vault.database import Database, Secret
 from otp_vault.main import add_secret, change_password, search_secrets
 
 
@@ -155,5 +155,29 @@ class TestMain(TestCase):
 			database.add_secret(SAMPLE_PASSWORD, "test_label", "test_key")
 			mock_save.reset_mock()
 			search_secrets(database, mock_error_handler, SAMPLE_PASSWORD, "test", delete=2)
+			mock_error_handler.assert_called_once()
+			mock_save.assert_not_called()
+
+	def test_search_secrets_when_update_result(self) -> None:
+		mock_error_handler: Mock = Mock()
+		with patch.object(Database, "save") as mock_save:
+			database: Database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
+			database.add_secret(SAMPLE_PASSWORD, "test_label", "test_key")
+			mock_save.reset_mock()
+			self.assertIn(Secret("test_label", "test_key"), database.secrets)
+			self.assertNotIn(Secret("new_label", "test_key"), database.secrets)
+			search_secrets(database, mock_error_handler, SAMPLE_PASSWORD, "test", update=(1, "new_label"))
+			self.assertNotIn(Secret("test_label", "test_key"), database.secrets)
+			self.assertIn(Secret("new_label", "test_key"), database.secrets)
+			mock_error_handler.assert_not_called()
+			mock_save.assert_called_once_with(SAMPLE_PASSWORD)
+
+	def test_search_secrets_when_update_not_in_range(self) -> None:
+		mock_error_handler: Mock = Mock()
+		with patch.object(Database, "save") as mock_save:
+			database: Database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
+			database.add_secret(SAMPLE_PASSWORD, "test_label", "test_key")
+			mock_save.reset_mock()
+			search_secrets(database, mock_error_handler, SAMPLE_PASSWORD, "test", update=(2, "new_label"))
 			mock_error_handler.assert_called_once()
 			mock_save.assert_not_called()

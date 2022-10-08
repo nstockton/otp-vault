@@ -224,6 +224,19 @@ class TestDatabase(TestCase):
 			self.assertEqual(len(database.secrets), 2)
 			mock_save.assert_called_once_with(SAMPLE_PASSWORD)
 
+	def test_update_secret(self) -> None:
+		with patch.object(Database, "save") as mock_save:
+			database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
+			database.secrets.append(Secret("alpha", "apple"))
+			database.secrets.append(Secret("beta", "banana"))
+			database.secrets.append(Secret("Charley", "cantaloupe"))
+			self.assertIn(Secret("beta", "banana"), database.secrets)
+			self.assertNotIn(Secret("tango", "banana"), database.secrets)
+			database.update_secret(SAMPLE_PASSWORD, "beta", "tango")
+			self.assertNotIn(Secret("beta", "banana"), database.secrets)
+			self.assertIn(Secret("tango", "banana"), database.secrets)
+			mock_save.assert_called_once_with(SAMPLE_PASSWORD)
+
 	def test_magic_methods(self) -> None:
 		database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 		database["alpha"] = "apple"  # __setitem__
