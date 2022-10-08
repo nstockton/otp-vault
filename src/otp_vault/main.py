@@ -88,6 +88,14 @@ class ArgumentParser(Tap):  # pragma: no cover
 
 
 def change_password(database: Database, error_handler: Callable[[str], None], password: str) -> None:
+	"""
+	Changes the password of an existing database.
+
+	Args:
+		database: The database to perform the change password operation on.
+		error_handler: A callback function to be called when an exception is raised.
+		password: The replacement password for the database.
+	"""
 	try:
 		database.save(password)
 	except ValueError as e:
@@ -99,6 +107,16 @@ def change_password(database: Database, error_handler: Callable[[str], None], pa
 def add_secret(
 	database: Database, error_handler: Callable[[str], None], password: str, label: str, key: str
 ) -> None:
+	"""
+	Adds a secret to a database.
+
+	Args:
+		database: The database where the secret should be added.
+		error_handler: A callback function to be called when an exception is raised.
+		password: The password for the database.
+		label: A label for the secret.
+		key: The key for the secret.
+	"""
 	try:
 		database.add_secret(password, label, key)
 	except ValueError as e:
@@ -117,6 +135,18 @@ def search_secrets(
 	delete: Optional[int] = None,
 	update: Optional[tuple[int, str]] = None,
 ) -> None:
+	"""
+	Searches secrets in a database by label.
+
+	Args:
+		database: The database to search.
+		error_handler: A callback function to be called when an exception is raised.
+		password: The password for the database.
+		text: The search text to match against secret labels.
+		copy: Copy the corresponding search result to the clipboard.
+		delete: Delete the corresponding search result from the database.
+		update: Update the corresponding search result with a new label.
+	"""
 	results: tuple[tuple[str, str], ...] = database.search_secrets(text)
 	if not results:
 		sys.exit("No results found.")  # Prints to STDERR and exits with status code 1.
