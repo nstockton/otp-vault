@@ -22,27 +22,27 @@ SAMPLE_TIME: float = 1664791695.2226732
 class TestOTP(TestCase):
 	def test_hotp_when_invalid_counter(self) -> None:
 		with self.assertRaises(ValueError):
-			hotp(SAMPLE_KEY, -1)
+			hotp(SAMPLE_KEY, counter=-1)
 
 	def test_hotp_when_invalid_length(self) -> None:
 		with self.assertRaises(ValueError):
-			hotp(SAMPLE_KEY, 42, length=5)
+			hotp(SAMPLE_KEY, counter=42, length=5)
 
 	def test_hotp_when_valid_arguments(self) -> None:
-		self.assertEqual(hotp(SAMPLE_KEY, 42), "990887")
+		self.assertEqual(hotp(SAMPLE_KEY, counter=42), "990887")
 
 	def test_hotp_when_valid_length_range(self) -> None:
 		sample_code: str = "1035990887"
 		for i in range(6, 11):
-			self.assertEqual(hotp(SAMPLE_KEY, 42, length=i), sample_code[-i:])
+			self.assertEqual(hotp(SAMPLE_KEY, counter=42, length=i), sample_code[-i:])
 
 	@patch("otp_vault.otp.time.time", Mock(return_value=SAMPLE_TIME))
 	def test_totp_when_default_arguments(self) -> None:
 		self.assertEqual(totp(SAMPLE_KEY), "362173")
 
 	@patch("otp_vault.otp.time.time", Mock(return_value=SAMPLE_TIME))
-	def test_totp_when_interval_specified(self) -> None:
-		self.assertEqual(totp(SAMPLE_KEY, interval=60), "489376")
+	def test_totp_when_time_step_specified(self) -> None:
+		self.assertEqual(totp(SAMPLE_KEY, time_step=60), "489376")
 
 	@patch("otp_vault.otp.time.time", Mock(return_value=SAMPLE_TIME))
 	def test_totp_when_delta_specified(self) -> None:
@@ -54,4 +54,4 @@ class TestOTP(TestCase):
 
 	@patch("otp_vault.otp.time.time", Mock(return_value=SAMPLE_TIME))
 	def test_totp_when_multiple_arguments_specified(self) -> None:
-		self.assertEqual(totp(SAMPLE_KEY, interval=90, delta=5, length=9), "099326450")
+		self.assertEqual(totp(SAMPLE_KEY, time_step=90, delta=5, length=9), "099326450")
