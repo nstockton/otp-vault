@@ -42,13 +42,6 @@ class TestDatabase(TestCase):
 			database._check_secret_label_whitespace("invalid\twhitespace")
 		database._check_secret_label_whitespace("this is a valid string")
 
-	@patch.object(Database, "save", Mock())
-	def test_check_secret_key_whitespace(self) -> None:
-		database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
-		with self.assertRaises(ValueError):
-			database._check_secret_key_whitespace("invalid whitespace")
-		database._check_secret_key_whitespace("valid_string")
-
 	def test_validate_json(self) -> None:
 		with ExitStack() as cm:
 			mock_schema_path = cm.enter_context(patch.object(Database, "schema_path", PropertyMock()))

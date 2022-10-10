@@ -106,19 +106,6 @@ class Database(MutableMapping[str, Any]):
 		elif WHITE_SPACE_EXCEPT_SPACE_REGEX.search(label) is not None:
 			raise ValueError("label cannot contain white-space characters except for space.")
 
-	def _check_secret_key_whitespace(self, key: str) -> None:
-		"""
-		Checks a secret key for white-space characters.
-
-		Args:
-			key: The OTP key for the secret.
-
-		Raises:
-			ValueError: The key contains white-space characters.
-		"""
-		if WHITE_SPACE_REGEX.search(key) is not None:
-			raise ValueError("key cannot contain white-space characters.")
-
 	def _validate_json(self) -> None:
 		"""Validates json data against a schema."""
 		with open(self.schema_path, "r", encoding="utf-8") as f:
@@ -206,7 +193,9 @@ class Database(MutableMapping[str, Any]):
 			ValueError: A key with the same label already exists in the database.
 		"""
 		self._check_secret_label_whitespace(label)
-		self._check_secret_key_whitespace(key)
+		key = WHITE_SPACE_REGEX.sub("", key)
+		token_type = WHITE_SPACE_REGEX.sub("", token_type)
+		initial_input = WHITE_SPACE_REGEX.sub("", initial_input)
 		if label in (secret.label for secret in self.secrets):
 			raise ValueError(f"Secret with label {label} already exists in the database.")
 		self.secrets.append(Secret(label, key, token_type, length, initial_input))

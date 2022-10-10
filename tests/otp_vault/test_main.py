@@ -91,15 +91,17 @@ class TestMain(TestCase):
 			mock_error_handler.assert_called_once()
 			mock_save.assert_not_called()
 
-	def test_add_secret_when_invalid_key(self) -> None:
+	def test_add_secret_when_key_contains_white_space(self) -> None:
 		mock_error_handler: Mock = Mock()
 		with patch.object(Database, "save") as mock_save:
 			database: Database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
-			add_secret(
-				database, mock_error_handler, SAMPLE_PASSWORD, "test_label", " invalid_key ", "totp", 6, "0"
-			)
-			mock_error_handler.assert_called_once()
-			mock_save.assert_not_called()
+			before: Secret = Secret("test_label", " invalid\tkey ", "totp", 6, "0")
+			after: Secret = Secret("test_label", "invalidkey", "totp", 6, "0")
+			self.assertNotIn(after, database.secrets)
+			add_secret(database, mock_error_handler, SAMPLE_PASSWORD, *before)
+			self.assertIn(after, database.secrets)
+			mock_error_handler.assert_not_called()
+			mock_save.assert_called_once_with(SAMPLE_PASSWORD)
 
 	def test_search_secrets_when_print_results(self) -> None:
 		mock_error_handler: Mock = Mock()

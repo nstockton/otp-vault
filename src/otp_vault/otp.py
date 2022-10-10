@@ -63,7 +63,6 @@ def hotp(key: str, initial_input: str, *, length: int = 6) -> str:
 	if not 6 <= length <= 10:  # Interval comparison.
 		raise ValueError("length must be in range 6-10 (inclusive).")
 	counter: int = int(initial_input)
-	key = key.strip().replace(" ", "")
 	width: int = len(key) + 7 & -8  # Round up by multiples of 8.
 	key = key.ljust(width, "=")  # padding to an 8-character boundary.
 	decoded_key: bytes = base64.b32decode(key, casefold=True)
