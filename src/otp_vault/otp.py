@@ -8,11 +8,42 @@ from __future__ import annotations
 
 # Built-in Modules:
 import base64
+import hashlib
 import hmac
 import time
 
 
-def hotp(key: str, *, counter: int = 0, length: int = 6) -> str:
+def motp(key: str, initial_input: str, *, length: int = 6) -> str:
+	"""
+	Generates a mobile one-time password.
+
+	Note:
+		https://motp.sourceforge.net/#1.1
+
+	Args:
+		key: A secret key of length 16 containing alphanumeric hex.
+		initial_input: A 4-digit pin.
+		length: The desired length of the generated code.
+
+	Returns:
+		The MOTP value as a string of alphanumeric hex with the desired length.
+	"""
+	key = key.strip()
+	initial_input = initial_input.strip()
+	try:
+		int(key, 16)
+	except ValueError:
+		raise ValueError("key must contain only hex digits.")
+	if initial_input and not initial_input.isdigit():
+		raise ValueError("initial_input must contain only digits.")
+	if len(initial_input) != 4:
+		raise ValueError("initial_input must have length 4.")
+	counter: int = int(time.time()) // 10
+	data: bytes = bytes(f"{counter}{key}{initial_input}", "us-ascii")
+	return hashlib.md5(data).hexdigest()[:length]
+
+
+def hotp(key: str, initial_input: str, *, length: int = 6) -> str:
 	"""
 	Generates an HMAC-based one-time password.
 
@@ -20,17 +51,18 @@ def hotp(key: str, *, counter: int = 0, length: int = 6) -> str:
 		https://www.ietf.org/rfc/rfc4226.txt
 
 	Args:
-		key: The secret key in base32 format.
-		counter: The HOTP counter.
+		key: The secret key encoded in base32 format.
+		initial_input: The HOTP counter.
 		length: The desired length of the returned value.
 
 	Returns:
-		The OTP value as a string of digits with the desired length.
+		The HOTP value as a string of digits with the desired length.
 	"""
-	if counter < 0:
-		raise ValueError("counter must be a positive integer.")
+	if not initial_input.isdigit():
+		raise ValueError("initial_input must contain only digits.")
 	if not 6 <= length <= 10:  # Interval comparison.
 		raise ValueError("length must be in range 6-10 (inclusive).")
+	counter: int = int(initial_input)
 	key = key.strip().replace(" ", "")
 	width: int = len(key) + 7 & -8  # Round up by multiples of 8.
 	key = key.ljust(width, "=")  # padding to an 8-character boundary.
@@ -44,7 +76,7 @@ def hotp(key: str, *, counter: int = 0, length: int = 6) -> str:
 	return str(code).zfill(length)
 
 
-def totp(key: str, *, time_step: int = 30, delta: int = 0, length: int = 6) -> str:
+def totp(key: str, initial_input: str, *, time_step: int = 30, delta: int = 0, length: int = 6) -> str:
 	"""
 	Generates a time-based one-time password.
 
@@ -55,7 +87,8 @@ def totp(key: str, *, time_step: int = 30, delta: int = 0, length: int = 6) -> s
 		https://www.ietf.org/rfc/rfc6238.txt
 
 	Args:
-		key: The secret key in base32 format.
+		key: The secret key encoded in base32 format.
+		initial_input: A Unix timestamp representing an alternate start time when calculating steps.
 		time_step: The interval in seconds between OTP value changes.
 		delta: A delta which is applied to the current time-step (1 for next step, -1 for previous).
 		length: The desired length of the returned value.
@@ -63,5 +96,6 @@ def totp(key: str, *, time_step: int = 30, delta: int = 0, length: int = 6) -> s
 	Returns:
 		The TOTP value as a string of digits.
 	"""
-	current_step: int = int(time.time()) // time_step
-	return hotp(key, counter=current_step + delta, length=length)
+	start_epoch: int = int(initial_input)
+	current_step: int = int(time.time() - start_epoch) // time_step
+	return hotp(key, str(current_step + delta), length=length)

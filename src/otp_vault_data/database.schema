@@ -12,11 +12,30 @@
       "type": "array",
       "items": {
         "type": "array",
-        "minItems": 2,
-        "maxItems": 2,
-        "items": {
-          "type": "string"
-        }
+        "minItems": 5,
+        "maxItems": 5,
+        "items": [
+          {
+            "type": "string",
+            "minLength": 1
+          },
+          {
+            "type": "string",
+            "minLength": 1
+          },
+          {
+            "enum": ["hotp", "motp", "totp"]
+          },
+          {
+            "type": "integer",
+            "minimum": 6,
+            "maximum": 10
+          },
+          {
+            "type": "string",
+            "pattern": "^[0-9]{1,20}$"
+          }
+        ]
       }
     }
   },

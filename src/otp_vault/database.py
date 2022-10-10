@@ -36,6 +36,9 @@ class Secret(NamedTuple):
 
 	label: str
 	key: str
+	type: str
+	length: int
+	input: str
 
 
 class DatabaseError(Exception):
@@ -146,9 +149,9 @@ class Database(MutableMapping[str, Any]):
 			self._validate_json()
 			schema_version: str = self._database.pop("schema_version")  # NOQA: F841
 			# Sort and convert secret items from the lists that json saves them as.
-			secrets = sorted(self.secrets, key=lambda secret: "".join(secret).lower())
+			secrets = sorted(self.secrets, key=lambda secret: secret[0].lower())
 			self.secrets.clear()
-			self.secrets.extend(Secret(label, key) for label, key in secrets)
+			self.secrets.extend(Secret(*s) for s in secrets)
 		if needs_rehash:
 			# Default values for the password hasher have been updated since the database was last saved.
 			# Encrypt the database with the new values and save it to disk.
@@ -179,7 +182,15 @@ class Database(MutableMapping[str, Any]):
 				f.write(bytes(f"{pw_hash}\n", "utf-8"))
 				f.write(enc_data)
 
-	def add_secret(self, password: str, label: str, key: str) -> None:
+	def add_secret(
+		self,
+		password: str,
+		label: str,
+		key: str,
+		token_type: str,
+		length: int,
+		initial_input: str,
+	) -> None:
 		"""
 		Adds a secret to the database.
 
@@ -187,6 +198,9 @@ class Database(MutableMapping[str, Any]):
 			password: The password for encrypting the database.
 			label: The label for the secret.
 			key: The OTP key for the secret.
+			token_type: A valid OTP token type.
+			length: The desired length of the generated code.
+			initial_input: A moving factor value, such as MOTP pin, HOTP counter, or TOTP start time.
 
 		Raises:
 			ValueError: A key with the same label already exists in the database.
@@ -195,7 +209,7 @@ class Database(MutableMapping[str, Any]):
 		self._check_secret_key_whitespace(key)
 		if label in (secret.label for secret in self.secrets):
 			raise ValueError(f"Secret with label {label} already exists in the database.")
-		self.secrets.append(Secret(label, key))
+		self.secrets.append(Secret(label, key, token_type, length, initial_input))
 		self.save(password)
 
 	def search_secrets(self, text: str, *, exact_match: bool = False) -> tuple[Secret, ...]:
@@ -246,7 +260,21 @@ class Database(MutableMapping[str, Any]):
 		self._check_secret_label_whitespace(new_label)
 		for secret in self.search_secrets(label, exact_match=True):
 			index: int = self.secrets.index(secret)
-			self.secrets[index] = Secret(new_label, secret.key)
+			self.secrets[index] = Secret(new_label, *secret[1:])
+		self.save(password)
+
+	def increment_initial_input(self, password: str, secret: Secret, *, amount: int = 1) -> None:
+		"""
+		Increments the initial input of a secret.
+
+		Args:
+			password: The password for encrypting the database.
+			secret: The secret to perform the operation on.
+			amount: The amount to increment by.
+		"""
+		index: int = self.secrets.index(secret)
+		initial_input: str = str(int(secret.input) + amount)
+		self.secrets[index] = Secret(*secret[:-1], initial_input)
 		self.save(password)
 
 	def __getitem__(self, key: str) -> Any:

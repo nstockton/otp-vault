@@ -80,7 +80,7 @@ def get_clipboard() -> str:
 	return text
 
 
-def set_clipboard(text: str) -> None:
+def set_clipboard(text: str) -> bool:
 	"""
 	Copies text into the clipboard.
 
@@ -89,7 +89,7 @@ def set_clipboard(text: str) -> None:
 	"""
 	if sys.platform != "win32":
 		# Currently only Windows is supported.
-		return None
+		return False
 	data: bytes = bytes(text, "utf-16le")
 	OpenClipboard(None)
 	try:
@@ -99,5 +99,8 @@ def set_clipboard(text: str) -> None:
 		memmove(contents, data, len(data))
 		GlobalUnlock(handle)
 		SetClipboardData(CF_UNICODETEXT, handle)
+	except Exception:
+		return False
 	finally:
 		CloseClipboard()
+	return True

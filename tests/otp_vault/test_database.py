@@ -23,10 +23,10 @@ from otp_vault.encryption import decrypt
 SAMPLE_PASSWORD: str = "test_password"
 SAMPLE_FILENAME: str = "testdatabase-878d2b571a6e41d5b0cd61f8c98a13ae"
 SAMPLE_DATA: bytes = (
-	b"acd34ec20b659e7c9782e4fe6e487382a3e3e3514a8d62ee30010ff94a677042\n"
-	+ b"$argon2id$v=19$m=65536,t=3,p=4$T3cOxLgyOhmUDmK0kfDz0Q$0As+kPAbE4pNyrHSp6b3vFSt0GtgGsQJ9Pz9fTrg8Pc\n"
-	+ b"gAAAAABjQDUoYx9A1F46X79yzpDqxcg9dBUoynXVBvx2ofBxY8qssfH7oResFfVK5jx7JF3ONxcB35cYBp"
-	+ b"uUb3W6I-3Hk5fa6MHZEFNMheIhY52I6_KNBZ21rCfsV6uHdXFuztw51mca5ioLklRgYgbrJMGgPk8CMA=="
+	b"0949f70993ec9836d292a3600f1bb9d169268f7aed48c16fe5824b2ca280472b\n"
+	+ b"$argon2id$v=19$m=65536,t=3,p=4$JpMbcmo8O4jCdPD+xEvgKQ$jO+MDuERIvD8uGvCdygqje5eP4XaMsmf0vbl8R3q0hY\n"
+	+ b"gAAAAABjQ8WPoOc_euZ5agxAjGYk3GWlYarUnyJPvRgjtkqk_e4cNKD1P9tZVFj2liKoazRhkGqr_Up26x6_u0FjZVpj"
+	+ b"QHKa0Rl1A9X6-41ubytQUczLATp-NZDn7-YVgHqwjxgMfDAWABgJLN8wvDhrQ5f46t97GVgRlIFdi9COJlQlaxBcSAk="
 )
 
 
@@ -57,7 +57,7 @@ class TestDatabase(TestCase):
 			self.assertEqual(len(database), 0)
 			database["schema_version"] = 1
 			# Validation expects list, not tuple.
-			database.secrets.append(["test_label", "test_key"])  # type: ignore[arg-type]
+			database.secrets.append(["test_label", "test_key", "totp", 6, "0"])  # type: ignore[arg-type]
 			database._validate_json()
 			cm.enter_context(self.assertRaises(ValidationError))
 			# Invalid secret.
@@ -106,7 +106,7 @@ class TestDatabase(TestCase):
 			self.assertEqual(len(database), 1)
 			self.assertIn("secrets", database)
 			self.assertEqual(len(database.secrets), 1)
-			self.assertIn(("test_label", "test_key"), database.secrets)
+			self.assertIn(Secret("test_label", "test_key", "totp", 6, "0"), database.secrets)
 
 	@patch("otp_vault.database.os")
 	def test_load_when_valid_data_needs_password_rehash(self, mock_os: Mock) -> None:
@@ -127,7 +127,7 @@ class TestDatabase(TestCase):
 	def test_save_when_invalid_password(self) -> None:
 		with patch("otp_vault.database.open", mock_open()) as mopen:
 			database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
-			database.secrets.append(Secret("test_label", "test_key"))
+			database.secrets.append(Secret("test_label", "test_key", "totp", 6, "0"))
 			with self.assertRaises(ValueError):
 				database.save(" ")
 			with self.assertRaises(ValueError):
@@ -145,7 +145,7 @@ class TestDatabase(TestCase):
 			mopen.return_value.write.side_effect = lambda d: saved_data.extend(d)
 			mock_os.path.exists.return_value = False
 			database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
-			database.secrets.append(Secret("test_label", "test_key"))
+			database.secrets.append(Secret("test_label", "test_key", "totp", 6, "0"))
 			database.save(SAMPLE_PASSWORD)
 			mopen.assert_called_once_with(database.file_path, "wb")
 		# Test loading the saved data succeeds.
@@ -157,68 +157,68 @@ class TestDatabase(TestCase):
 			self.assertEqual(len(database), 1)
 			self.assertIn("secrets", database)
 			self.assertEqual(len(database.secrets), 1)
-			self.assertIn(("test_label", "test_key"), database.secrets)
+			self.assertIn(Secret("test_label", "test_key", "totp", 6, "0"), database.secrets)
 
 	def test_add_secret_when_valid_data(self) -> None:
 		with patch.object(Database, "save") as mock_save:
 			database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
-			database.add_secret(SAMPLE_PASSWORD, "test_label", "test_key")
+			database.add_secret(SAMPLE_PASSWORD, "test_label", "test_key", "totp", 6, "0")
 			mock_save.assert_called_once_with(SAMPLE_PASSWORD)
 
 	def test_add_secret_when_label_already_exists(self) -> None:
 		with ExitStack() as cm:
 			mock_save = cm.enter_context(patch.object(Database, "save"))
 			database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
-			database.add_secret(SAMPLE_PASSWORD, "test_label", "test_key")
+			database.add_secret(SAMPLE_PASSWORD, "test_label", "test_key", "totp", 6, "0")
 			mock_save.assert_called_once_with(SAMPLE_PASSWORD)
 			mock_save.reset_mock()
 			cm.enter_context(self.assertRaises(ValueError))
-			database.add_secret(SAMPLE_PASSWORD, "test_label", "test_key")
+			database.add_secret(SAMPLE_PASSWORD, "test_label", "test_key", "totp", 6, "0")
 			mock_save.assert_not_called()
 
 	def test_search_secrets_when_empty_search_text(self) -> None:
 		database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
-		database.secrets.append(Secret("alpha", "apple"))
-		database.secrets.append(Secret("beta", "banana"))
-		database.secrets.append(Secret("Charley", "cantaloupe"))
+		database.secrets.append(Secret("alpha", "apple", "totp", 6, "0"))
+		database.secrets.append(Secret("beta", "banana", "totp", 6, "0"))
+		database.secrets.append(Secret("Charley", "cantaloupe", "totp", 6, "0"))
 		# Empty search text should always return immediately.
 		self.assertEqual(len(database.search_secrets("", exact_match=True)), 0)
 
 	def test_search_secrets_when_exact_match_and_results_found(self) -> None:
 		database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
-		database.secrets.append(Secret("alpha", "apple"))
-		database.secrets.append(Secret("beta", "banana"))
-		database.secrets.append(Secret("Charley", "cantaloupe"))
+		database.secrets.append(Secret("alpha", "apple", "totp", 6, "0"))
+		database.secrets.append(Secret("beta", "banana", "totp", 6, "0"))
+		database.secrets.append(Secret("Charley", "cantaloupe", "totp", 6, "0"))
 		self.assertEqual(len(database.search_secrets("Charley", exact_match=True)), 1)
 
 	def test_search_secrets_when_exact_match_and_results_not_found(self) -> None:
 		database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
-		database.secrets.append(Secret("alpha", "apple"))
-		database.secrets.append(Secret("beta", "banana"))
-		database.secrets.append(Secret("Charley", "cantaloupe"))
+		database.secrets.append(Secret("alpha", "apple", "totp", 6, "0"))
+		database.secrets.append(Secret("beta", "banana", "totp", 6, "0"))
+		database.secrets.append(Secret("Charley", "cantaloupe", "totp", 6, "0"))
 		self.assertEqual(len(database.search_secrets("tango", exact_match=True)), 0)
 
 	def test_search_secrets_when_regex_matches_search_text(self) -> None:
 		database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
-		database.secrets.append(Secret("alpha", "apple"))
-		database.secrets.append(Secret("beta", "banana"))
-		database.secrets.append(Secret("Charley", "cantaloupe"))
+		database.secrets.append(Secret("alpha", "apple", "totp", 6, "0"))
+		database.secrets.append(Secret("beta", "banana", "totp", 6, "0"))
+		database.secrets.append(Secret("Charley", "cantaloupe", "totp", 6, "0"))
 		self.assertEqual(len(database.search_secrets("a$", exact_match=False)), 2)
 
 	def test_search_secrets_when_regex_does_not_match_search_text(self) -> None:
 		database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
-		database.secrets.append(Secret("alpha", "apple"))
-		database.secrets.append(Secret("beta", "banana"))
-		database.secrets.append(Secret("Charley", "cantaloupe"))
+		database.secrets.append(Secret("alpha", "apple", "totp", 6, "0"))
+		database.secrets.append(Secret("beta", "banana", "totp", 6, "0"))
+		database.secrets.append(Secret("Charley", "cantaloupe", "totp", 6, "0"))
 		self.assertEqual(len(database.search_secrets("tango", exact_match=False)), 0)
 
 	def test_delete_secret(self) -> None:
 		with patch.object(Database, "save") as mock_save:
 			database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 			self.assertEqual(len(database.secrets), 0)
-			database.secrets.append(Secret("alpha", "apple"))
-			database.secrets.append(Secret("beta", "banana"))
-			database.secrets.append(Secret("Charley", "cantaloupe"))
+			database.secrets.append(Secret("alpha", "apple", "totp", 6, "0"))
+			database.secrets.append(Secret("beta", "banana", "totp", 6, "0"))
+			database.secrets.append(Secret("Charley", "cantaloupe", "totp", 6, "0"))
 			self.assertEqual(len(database.secrets), 3)
 			database.delete_secret(SAMPLE_PASSWORD, "beta")
 			self.assertEqual(len(database.secrets), 2)
@@ -227,14 +227,27 @@ class TestDatabase(TestCase):
 	def test_update_secret(self) -> None:
 		with patch.object(Database, "save") as mock_save:
 			database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
-			database.secrets.append(Secret("alpha", "apple"))
-			database.secrets.append(Secret("beta", "banana"))
-			database.secrets.append(Secret("Charley", "cantaloupe"))
-			self.assertIn(Secret("beta", "banana"), database.secrets)
-			self.assertNotIn(Secret("tango", "banana"), database.secrets)
+			database.secrets.append(Secret("alpha", "apple", "totp", 6, "0"))
+			database.secrets.append(Secret("beta", "banana", "totp", 6, "0"))
+			database.secrets.append(Secret("Charley", "cantaloupe", "totp", 6, "0"))
+			self.assertIn(Secret("beta", "banana", "totp", 6, "0"), database.secrets)
+			self.assertNotIn(Secret("tango", "banana", "totp", 6, "0"), database.secrets)
 			database.update_secret(SAMPLE_PASSWORD, "beta", "tango")
-			self.assertNotIn(Secret("beta", "banana"), database.secrets)
-			self.assertIn(Secret("tango", "banana"), database.secrets)
+			self.assertNotIn(Secret("beta", "banana", "totp", 6, "0"), database.secrets)
+			self.assertIn(Secret("tango", "banana", "totp", 6, "0"), database.secrets)
+			mock_save.assert_called_once_with(SAMPLE_PASSWORD)
+
+	def test_increment_initial_input(self) -> None:
+		with patch.object(Database, "save") as mock_save:
+			database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
+			before: Secret = Secret("alpha", "apple", "hotp", 6, "0")
+			after: Secret = Secret("alpha", "apple", "hotp", 6, "1")
+			database.secrets.append(before)
+			self.assertIn(before, database.secrets)
+			self.assertNotIn(after, database.secrets)
+			database.increment_initial_input(SAMPLE_PASSWORD, before, amount=1)
+			self.assertNotIn(before, database.secrets)
+			self.assertIn(after, database.secrets)
 			mock_save.assert_called_once_with(SAMPLE_PASSWORD)
 
 	def test_magic_methods(self) -> None:
