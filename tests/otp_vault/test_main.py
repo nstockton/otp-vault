@@ -126,6 +126,33 @@ class TestMain(TestCase):
 			mock_sys_exit.assert_called_once()
 			mock_save.assert_not_called()
 
+	def test_search_secrets_when_action_performed_on_item_other_than_first(self) -> None:
+		# This tests for a regression occurring when the user tries to
+		# perform an action on a search result, other than the first.
+		# We need to make sure that only the output of the action is printed when an action is supplied.
+		mock_error_handler: Mock = Mock()
+		with ExitStack() as cm:
+			mock_save = cm.enter_context(patch.object(Database, "save"))
+			mock_print = cm.enter_context(patch("otp_vault.main.print"))
+			mock_totp = cm.enter_context(patch("otp_vault.main.otp.totp"))
+			mock_set_clipboard = cm.enter_context(patch("otp_vault.main.set_clipboard"))
+			database: Database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
+			secret1: Secret = Secret("test_label1", "test_key1", "totp", 6, "0")
+			secret2: Secret = Secret("test_label2", "test_key2", "totp", 6, "0")
+			secret3: Secret = Secret("test_label3", "test_key3", "totp", 6, "0")
+			database.add_secret(SAMPLE_PASSWORD, *secret1)
+			database.add_secret(SAMPLE_PASSWORD, *secret2)
+			database.add_secret(SAMPLE_PASSWORD, *secret3)
+			mock_save.reset_mock()
+			mock_totp.return_value = "123456"
+			mock_set_clipboard.return_value = True
+			search_secrets(database, mock_error_handler, SAMPLE_PASSWORD, "test", copy=3)
+			mock_error_handler.assert_not_called()
+			mock_save.assert_not_called()
+			mock_totp.assert_called_once()
+			mock_set_clipboard.assert_called_once()
+			mock_print.assert_called_once()
+
 	def test_search_secrets_when_copy_result_succeeds(self) -> None:
 		mock_error_handler: Mock = Mock()
 		with ExitStack() as cm:

@@ -173,43 +173,53 @@ def search_secrets(
 		delete: Delete the corresponding search result from the database.
 		update: Update the corresponding search result with a new label.
 	"""
+	exclusive_args: tuple[Any, ...] = (copy, delete, update)
+	exclusive_args_not_specified: bool = all(i is None for i in exclusive_args)
 	results: tuple[Secret, ...] = database.search_secrets(text)
 	if not results:
 		sys.exit("No results found.")  # Prints to STDERR and exits with status code 1.
 	for i, result in enumerate(results):
 		label, key, token_type, length, initial_input = result
-		if copy is not None and not 1 <= copy <= len(results):
+		if exclusive_args_not_specified:
+			# User is searching for matching labels.
+			print(f"{i + 1}: {label}")
+		elif copy is not None and not 1 <= copy <= len(results):
+			# Item user wants to copy is out of range.
 			error_handler(f"Item {copy} to copy not in range 1-{len(results)}")
 			break
 		elif copy is not None and i + 1 == copy:
+			# User has selected a valid item to be copied to the clipboard.
 			token: str = get_token(token_type, key, initial_input, length=length)
 			if token_type == "hotp":
-				# Increment the counter.
+				# The HOTP counter needs to be incremented after every use.
 				database.increment_initial_input(password, result, amount=1)
 			status: bool = set_clipboard(token)
 			if status:
+				# Item was successfully copied to the clipboard.
 				print(f"Item {copy} ({label}) copied to clipboard.")
 			else:
-				print(f"{label}: {token}")
+				# An exception was raised, or clipboard module doesn't support the OS.
+				print(token)
 			break
 		elif delete is not None and not 1 <= delete <= len(results):
+			# Item user wants to delete is out of range.
 			error_handler(f"Item {delete} to delete not in range 1-{len(results)}")
 			break
 		elif delete is not None and i + 1 == delete:
+			# User has selected a valid item to be deleted.
 			database.delete_secret(password, label)
 			print(f"Item {delete} ({label}) deleted.")
 			break
 		elif update is not None and not 1 <= update[0] <= len(results):
+			# Item user wants to update is out of range.
 			error_handler(f"Item {update[0]} to update not in range 1-{len(results)}")
 			break
 		elif update is not None and i + 1 == update[0]:
+			# User has selected a valid item to be updated.
 			selected_item, new_label = update
 			database.update_secret(password, label, new_label)
 			print(f"Item {selected_item} ({label}) updated to {new_label}.")
 			break
-		else:
-			# Just searching.
-			print(f"{i + 1}: {label}")
 
 
 def main(parsed_args: ArgumentParser) -> None:  # pragma: no cover
