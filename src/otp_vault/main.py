@@ -7,6 +7,8 @@
 from __future__ import annotations
 
 # Built-in Modules:
+import ctypes
+import os
 import sys
 from collections.abc import Callable
 from typing import Any, Literal, Optional
@@ -255,6 +257,12 @@ def main(parsed_args: ArgumentParser) -> None:  # pragma: no cover
 
 
 def run() -> None:  # pragma: no cover
+	if sys.platform == "win32":
+		# Set the title of the console window.
+		ctypes.windll.kernel32.SetConsoleTitleW("OTP Vault")
 	parser: ArgumentParser = ArgumentParser(underscores_to_dashes=True, description=DESCRIPTION)
 	args: ArgumentParser = parser.parse_args()
 	main(args)
+	if sys.platform == "win32":
+		# Reset the title.
+		ctypes.windll.kernel32.SetConsoleTitleW(os.getenv("COMSPEC", "cmd"))

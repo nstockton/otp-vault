@@ -33,7 +33,8 @@ if not exist .venv (
 rem Run the program.
 if defined VIRTUAL_ENV (
 	rem User is running inside of an activated virtual environment.
-	python -m otp_vault %*
+	rem Run using a new cmd instance to prevent arguments being put on the window title.
+	cmd /c "python -m otp_vault %*"
 ) else (
 	rem User is not running inside of an activated virtual environment.
 	call .venv\scripts\activate.bat
