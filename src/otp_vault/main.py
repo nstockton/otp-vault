@@ -81,7 +81,7 @@ class ArgumentParser(Tap):  # pragma: no cover
 
 	def configure(self) -> None:
 		version: str = (
-			f"%(prog)s v{__version__} "
+			f"%(prog)s V{__version__} "
 			+ f"(Python {'.'.join(str(i) for i in sys.version_info[:3])} {sys.version_info.releaselevel})"
 		)
 		self.add_argument(
