@@ -1,17 +1,28 @@
 @echo off
 
-rem Change the working directory to the location of this batch script.
-pushd "%~dp0"
 
-rem Install the program if virtual environment not found.
-if not exist .venv (
-	echo Virtual environment not found. Creating a new one.
+:: In order to define functions before main, call main here and exit.
+pushd "%~dp0"
+call :func_main %*
+popd
+exit /b %ERRORLEVEL%
+
+
+:func_install_dependencies
+	:: Installs the package dependencies into a new virtual environment.
+	::
+	:: Returns:
+	::	0 if success, non-zero otherwise.
+	:: -----
+	:: Use python.exe if found to create the venv, otherwise fall back to Python Launcher.
 	where /q python.exe
 	if ERRORLEVEL 1 (
-		where /q py.exe || echo Error: unable to find python.exe or py.exe in path. && exit /b
-		echo Found Python Launcher.
+		:: python.exe was not found. Use Python launcher if available, otherwise error out.
+		where /q py.exe || echo Error: unable to find 'python.exe' or 'py.exe' in path. && exit /b 1
+		echo Using Python Launcher.
 		py -m venv .venv
-	) else (
+	) else if ERRORLEVEL 0 (
+		:: python.exe was found. Use it.
 		echo Found Python interpreter.
 		python -m venv .venv
 	)
@@ -25,22 +36,51 @@ if not exist .venv (
 	python -m pre_commit install -t pre-commit
 	python -m pre_commit install -t pre-push
 	call .venv\scripts\deactivate.bat
-	echo Virtual environment and dependencies installed.
-	echo Run this script again to use the program.
-	exit /b
-)
+	exit /b 0
 
-rem Run the program.
-if defined VIRTUAL_ENV (
-	rem User is running inside of an activated virtual environment.
-	rem Run using a new cmd instance to prevent arguments being put on the window title.
+
+:func_run_python_script
+	:: Runs Python using a new cmd instance to prevent arguments being put on the window title.
+	::
+	:: Args:
+	::	%*: Command line arguments.
+	::
+	:: Returns:
+	::	0 if success, non-zero otherwise.
+	:: -----
 	cmd /c "python -m otp_vault %*"
-) else (
-	rem User is not running inside of an activated virtual environment.
-	call .venv\scripts\activate.bat
-	python -m otp_vault %*
-	call .venv\scripts\deactivate.bat
-)
+	exit /b %ERRORLEVEL%
 
-rem Reset the working directory.
-popd
+
+:func_main
+	:: Executes the main body of the script.
+	::
+	:: Args:
+	::	%*: Command line arguments.
+	::
+	:: Returns:
+	::	0 if success, non-zero otherwise.
+	:: -----
+	:: Install the program if virtual environment not found.
+	if not exist .venv (
+		choice /c "yn" /m "Virtual environment not found. Would you like to create a new one
+		if ERRORLEVEL 2 (
+			echo Unable to proceed without a virtual environment.
+		) else if ERRORLEVEL 1 (
+			echo Creating a new virtual environment and installing dependencies.
+			:: If error, return immediately.
+			call :func_install_dependencies || exit /b %ERRORLEVEL%
+			echo Virtual environment and dependencies installed.
+			echo Run this script again to use the program.
+		)
+		exit /b 0
+	) else if defined VIRTUAL_ENV (
+		:: User is running inside of an activated virtual environment.
+		call :func_run_python_script %*
+	) else (
+		:: Virtual environment exists, but it is not currently activated.
+		call .venv\scripts\activate.bat
+		call :func_run_python_script %*
+		call .venv\scripts\deactivate.bat
+	)
+	exit /b %ERRORLEVEL%
