@@ -42,10 +42,12 @@ otpv <arguments>
 otpv <password> <options>
 ```
 
-Required Positional Arguments:
+### Required Positional Arguments
+
 - password The password for creating or accessing the secrets database.
 
-Options:
+### Options
+
 - `--change-password new_password` Changes an existing password.
 - `-a label key`, `--add label key` Adds a secret to the secrets database.
 - `-t type`, `--type type` Specifies the type of OTP algorithm (used with `--add`). Type may be one of 'hotp', 'motp', or 'totp' ('totp' is default).
