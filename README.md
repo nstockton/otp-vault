@@ -52,7 +52,7 @@ otpv <password> <options>
 - `-a label key`, `--add label key` Adds a secret to the secrets database.
 - `-t type`, `--type type` Specifies the type of OTP algorithm ('totp' is default, requires `--add`). Type may be one of 'hotp', 'motp', or 'totp'.
 - `-l length`, `--length length` Specifies the length of the resulting token (6 is default, requires `--add`). Length may be in range 6-10.
-- `-i value`, `--initial-input value` Specifies the pin / counter / start-time used as the moving factor (default is "0", requires `--add`).
+- `-i value`, `--initial-input value` Specifies the pin / counter / start-time used as the moving factor ('0' is default, requires `--add`).
 - `-s text`, `--search text` Searches for a secret by label.
 - `-c result_item`, `--copy result_item` Copies the token for a search result to the clipboard (requires `--search`). If the program does not support clipboard access on the current platform, the token will be printed to the screen instead.
 - `-d result_item`, `--delete result_item` Deletes a search result from the secrets database (requires `--search`).
