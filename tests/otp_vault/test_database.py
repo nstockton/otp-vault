@@ -158,6 +158,14 @@ class TestDatabase(TestCase):
 			database.add_secret(SAMPLE_PASSWORD, "test_label", "test_key", "totp", 6, "0")
 			mock_save.assert_called_once_with(SAMPLE_PASSWORD)
 
+	def test_add_secret_when_initial_input_must_be_digits(self) -> None:
+		with ExitStack() as cm:
+			mock_save = cm.enter_context(patch.object(Database, "save"))
+			cm.enter_context(self.assertRaises(ValueError))
+			database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
+			database.add_secret(SAMPLE_PASSWORD, "test_label", "test_key", "totp", 6, "invalid_input")
+			mock_save.assert_not_called()
+
 	def test_add_secret_when_label_already_exists(self) -> None:
 		with ExitStack() as cm:
 			mock_save = cm.enter_context(patch.object(Database, "save"))

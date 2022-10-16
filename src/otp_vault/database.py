@@ -196,6 +196,9 @@ class Database(MutableMapping[str, Any]):
 		key = WHITE_SPACE_REGEX.sub("", key)
 		token_type = WHITE_SPACE_REGEX.sub("", token_type)
 		initial_input = WHITE_SPACE_REGEX.sub("", initial_input)
+		input_requires_digits_types: tuple[str, ...] = ("hotp", "motp", "totp")
+		if token_type in input_requires_digits_types and not initial_input.isdigit():
+			raise ValueError(f"Initial input must be digits if token type is {token_type}.")
 		if label in (secret.label for secret in self.secrets):
 			raise ValueError(f"Secret with label {label} already exists in the database.")
 		self.secrets.append(Secret(label, key, token_type, length, initial_input))
