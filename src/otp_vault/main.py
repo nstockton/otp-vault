@@ -35,25 +35,25 @@ def get_token(token_type: str, *args: Any, **kwargs: Any) -> str:
 
 class ArgumentParser(Tap):  # pragma: no cover
 	password: str
-	"""The password for decrypting the database."""
+	"""The password for creating or accessing the secrets database."""
 	change_password: Optional[str] = None
-	"""Change an existing password."""
+	"""Changes an existing password."""
 	add: Optional[str] = None
-	"""Add a secret key."""
+	"""Adds a secret to the secrets database."""
 	type: Literal["hotp", "motp", "totp"] = "totp"
-	"""The type of OTP used (used with --add)."""
+	"""Specifies the type of OTP algorithm (used with --add)."""
 	length: int = 6
-	"""The length of the output token (used with --add)."""
+	"""Specifies the length of the resulting token (used with --add)."""
 	initial_input: str = "0"
-	"""The pin / counter / start time used as the moving factor (used with --add)."""
+	"""Specifies the pin / counter / start-time used as the moving factor (used with --add)."""
 	search: Optional[str] = None
-	"""Search for a secret key."""
+	"""Searches for a secret by label."""
 	copy: Optional[int] = None
-	"""Copy a secret key to the clipboard (requires --search)."""
+	"""Copies the token for a search result to the clipboard (requires --search)."""
 	delete: Optional[int] = None
-	"""Delete a secret key (requires --search)."""
+	"""Deletes a search result from the secrets database (requires --search)."""
 	update: Optional[tuple[int, str]] = None
-	"""Update a secret key with a new label (requires --search)."""
+	"""Updates a search result with a new label (requires --search)."""
 
 	def process_args(self) -> None:
 		# Work around for defining a mutually exclusive group in TAP.configure throws
@@ -82,17 +82,6 @@ class ArgumentParser(Tap):  # pragma: no cover
 			self.error(f"{specified_exclusive_args} are mutually exclusive")
 
 	def configure(self) -> None:
-		version: str = (
-			f"%(prog)s V{__version__} "
-			+ f"(Python {'.'.join(str(i) for i in sys.version_info[:3])} {sys.version_info.releaselevel})"
-		)
-		self.add_argument(
-			"-v",
-			"--version",
-			help="Print the program version as well as the Python version.",
-			action="version",
-			version=version,
-		)
 		self.add_argument("password", metavar="password")
 		self.add_argument("--change-password", metavar="new_password")
 		self.add_argument("-a", "--add", nargs=2, metavar=("label", "key"))
@@ -100,9 +89,15 @@ class ArgumentParser(Tap):  # pragma: no cover
 		self.add_argument("-l", "--length", metavar="length")
 		self.add_argument("-i", "--initial-input", metavar="value")
 		self.add_argument("-s", "--search", metavar="text")
-		self.add_argument("-c", "--copy", metavar="item")
-		self.add_argument("-d", "--delete", metavar="item")
-		self.add_argument("-u", "--update", nargs=2, metavar=("item", "new_label"))
+		self.add_argument("-c", "--copy", metavar="result_item")
+		self.add_argument("-d", "--delete", metavar="result_item")
+		self.add_argument("-u", "--update", nargs=2, metavar=("result_item", "new_label"))
+		self.add_argument("-h", "--help", help="Shows program help.", action="help")
+		version: str = (
+			f"%(prog)s V{__version__} "
+			+ f"(Python {'.'.join(str(i) for i in sys.version_info[:3])} {sys.version_info.releaselevel})"
+		)
+		self.add_argument("-v", "--version", help="Shows program version.", action="version", version=version)
 
 
 def change_password(database: Database, error_handler: Callable[[str], None], password: str) -> None:
