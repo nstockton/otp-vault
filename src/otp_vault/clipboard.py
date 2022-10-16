@@ -7,17 +7,11 @@
 from __future__ import annotations
 
 # Built-in Modules:
+import ctypes
 import sys
 from collections.abc import Sequence
-from ctypes import WinDLL, WinError, c_size_t, create_string_buffer, get_last_error, memmove
-from ctypes.wintypes import BOOL, HANDLE, HGLOBAL, HWND, LPVOID, UINT
+from ctypes import wintypes
 from typing import Any, Optional
-
-
-CF_TEXT = 1
-CF_UNICODETEXT = 13
-GMEM_MOVEABLE = 0x0002
-GMEM_ZEROINIT = 0x0040
 
 
 def _decl(
@@ -35,35 +29,37 @@ def _decl(
 	return func
 
 
-def _errcheck(result: Any, func: Any, args: Sequence[Any]) -> Any:
+def _errcheck_windows(result: Any, func: Any, args: Sequence[Any]) -> Any:
 	if not result:
-		raise WinError(get_last_error())
+		raise ctypes.WinError(ctypes.get_last_error())
 
 
-user32 = WinDLL("user32", use_last_error=True)
-kernel32 = WinDLL("kernel32", use_last_error=True)
+if sys.platform == "win32":
+	# Windows-specific constants and libraries.
+	CF_TEXT = 1
+	CF_UNICODETEXT = 13
+	GMEM_MOVEABLE = 0x0002
+	GMEM_ZEROINIT = 0x0040
+	user32 = ctypes.WinDLL("user32", use_last_error=True)
+	kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+	OpenClipboard = _decl(user32.OpenClipboard, wintypes.BOOL, (wintypes.HWND,), _errcheck_windows)
+	CloseClipboard = _decl(user32.CloseClipboard, wintypes.BOOL)
+	EmptyClipboard = _decl(user32.EmptyClipboard, wintypes.BOOL)
+	GetClipboardData = _decl(user32.GetClipboardData, wintypes.HANDLE, (wintypes.UINT,))
+	SetClipboardData = _decl(user32.SetClipboardData, wintypes.HANDLE, (wintypes.UINT, wintypes.HANDLE))
+	GlobalLock = _decl(kernel32.GlobalLock, wintypes.LPVOID, (wintypes.HGLOBAL,))
+	GlobalUnlock = _decl(kernel32.GlobalUnlock, wintypes.BOOL, (wintypes.HGLOBAL,))
+	GlobalAlloc = _decl(kernel32.GlobalAlloc, wintypes.HGLOBAL, (wintypes.UINT, ctypes.c_size_t))
+	GlobalSize = _decl(kernel32.GlobalSize, ctypes.c_size_t, (wintypes.HGLOBAL,))
 
-OpenClipboard = _decl(user32.OpenClipboard, BOOL, (HWND,), _errcheck)
-CloseClipboard = _decl(user32.CloseClipboard, BOOL)
-EmptyClipboard = _decl(user32.EmptyClipboard, BOOL)
-GetClipboardData = _decl(user32.GetClipboardData, HANDLE, (UINT,))
-SetClipboardData = _decl(user32.SetClipboardData, HANDLE, (UINT, HANDLE))
-GlobalLock = _decl(kernel32.GlobalLock, LPVOID, (HGLOBAL,))
-GlobalUnlock = _decl(kernel32.GlobalUnlock, BOOL, (HGLOBAL,))
-GlobalAlloc = _decl(kernel32.GlobalAlloc, HGLOBAL, (UINT, c_size_t))
-GlobalSize = _decl(kernel32.GlobalSize, c_size_t, (HGLOBAL,))
 
-
-def get_clipboard() -> str:
+def _get_clipboard_windows() -> str:
 	"""
-	Gets the contents of the clipboard.
+	Gets the contents of the clipboard on Windows.
 
 	Returns:
 		The clipboard contents.
 	"""
-	if sys.platform != "win32":
-		# Currently only Windows is supported.
-		return ""
 	text: str = ""
 	OpenClipboard(None)
 	try:
@@ -71,8 +67,8 @@ def get_clipboard() -> str:
 		contents = GlobalLock(handle)
 		size = GlobalSize(handle)
 		if contents and size:
-			raw_data = create_string_buffer(size)
-			memmove(raw_data, contents, size)
+			raw_data = ctypes.create_string_buffer(size)
+			ctypes.memmove(raw_data, contents, size)
 			text = str(raw_data.raw, "utf-16le").rstrip("\0")
 		GlobalUnlock(handle)
 	finally:
@@ -80,9 +76,9 @@ def get_clipboard() -> str:
 	return text
 
 
-def set_clipboard(text: str) -> bool:
+def _set_clipboard_windows(text: str) -> bool:
 	"""
-	Copies text into the clipboard.
+	Copies text into the clipboard on Windows.
 
 	Args:
 		text: The text to copy to the clipboard.
@@ -96,7 +92,7 @@ def set_clipboard(text: str) -> bool:
 		EmptyClipboard()
 		handle = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, len(data) + 2)
 		contents = GlobalLock(handle)
-		memmove(contents, data, len(data))
+		ctypes.memmove(contents, data, len(data))
 		GlobalUnlock(handle)
 		SetClipboardData(CF_UNICODETEXT, handle)
 	except Exception:
@@ -104,3 +100,29 @@ def set_clipboard(text: str) -> bool:
 	finally:
 		CloseClipboard()
 	return True
+
+
+def get_clipboard() -> str:
+	"""
+	Gets the contents of the clipboard.
+
+	Returns:
+		The clipboard contents.
+	"""
+	if sys.platform == "win32":
+		return _get_clipboard_windows()
+	else:
+		return ""
+
+
+def set_clipboard(text: str) -> bool:
+	"""
+	Copies text into the clipboard.
+
+	Args:
+		text: The text to copy to the clipboard.
+	"""
+	if sys.platform == "win32":
+		return _set_clipboard_windows(text)
+	else:
+		return False
