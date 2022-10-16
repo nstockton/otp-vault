@@ -41,11 +41,11 @@ class ArgumentParser(Tap):  # pragma: no cover
 	add: Optional[str] = None
 	"""Adds a secret to the secrets database."""
 	type: Literal["hotp", "motp", "totp"] = "totp"
-	"""Specifies the type of OTP algorithm (used with --add)."""
+	"""Specifies the type of OTP algorithm (requires --add)."""
 	length: int = 6
-	"""Specifies the length of the resulting token (used with --add)."""
+	"""Specifies the length of the resulting token (requires --add)."""
 	initial_input: str = "0"
-	"""Specifies the pin / counter / start-time used as the moving factor (used with --add)."""
+	"""Specifies the pin / counter / start-time used as the moving factor (requires --add)."""
 	search: Optional[str] = None
 	"""Searches for a secret by label."""
 	copy: Optional[int] = None
