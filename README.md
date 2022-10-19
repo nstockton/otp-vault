@@ -39,26 +39,22 @@ otpv <arguments>
 ## OTP Vault Usage
 
 ```
-otpv <password> <options>
+otpv <PASSWORD> <OPTIONS>
 ```
-
-### Positional Arguments
-
-- password The password for creating or accessing the secrets database (**required**).
 
 ### Options
 
-- `--change-password new_password` Changes an existing password.
-- `-a label key`, `--add label key` Adds a secret to the secrets database.
-- `-t type`, `--type type` Specifies the type of OTP algorithm ('totp' is default, requires `--add`). Type may be one of 'hotp', 'motp', or 'totp'.
-- `-l length`, `--length length` Specifies the length of the resulting token (6 is default, requires `--add`). Length may be in range 6-10.
-- `-i value`, `--initial-input value` Specifies the pin / counter / start-time used as the moving factor ('0' is default, requires `--add`).
-- `-s text`, `--search text` Searches for a secret by label.
-- `-c result_item`, `--copy result_item` Copies the token for a search result to the clipboard (requires `--search`). If the program does not support clipboard access on the current platform, the token will be printed to the screen instead.
-- `-d result_item`, `--delete result_item` Deletes a search result from the secrets database (requires `--search`).
-- `-u result_item new_label`, `--update result_item new_label` Updates a search result with a new label (requires `--search`).
-- `-h`, `--help` Shows program help.
-- `-v`, `--version` Shows program version.
+- `--change-password <NEW_PASSWORD>`: changes an existing password.
+- `-a <LABEL> <KEY> | --add <LABEL> <KEY>`: adds a secret to the secrets database.
+    * `[-t <TYPE> | --type <TYPE>]`: specifies the algorithm to use when adding a secret ("totp" is default). Valid types are "hotp", "motp", and "totp".
+    * `[-l <LENGTH> | --length <LENGTH>]`: specifies the desired token length when adding a secret (6 is default). Valid length is in range 6-10.
+    * `[-i <VALUE> | --initial-input <VALUE>]`: specifies the pin / counter / start-time used as the moving factor when adding a secret ('0' is default).
+- `-s <TEXT> | --search <TEXT>`: searches for a secret by label.
+    * `[-c <RESULT_ITEM> | --copy <RESULT_ITEM>]`: copies the token for a search result to the clipboard. If the program does not support clipboard access on the current platform, the token will be printed to the screen instead.
+    * `[-d <RESULT_ITEM> | --delete <RESULT_ITEM>]`: deletes a search result from the secrets database.
+    * `[-u <RESULT_ITEM> <NEW_LABEL> | --update <RESULT_ITEM> <NEW_LABEL>]`: updates a search result with a new label.
+- `-h | --help`: shows program help.
+- `-v | --version`: shows program version.
 
 
 [OTP]: https://en.wikipedia.org/wiki/One-time_password (OTP Wikipedia Page)
