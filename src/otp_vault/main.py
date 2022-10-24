@@ -7,14 +7,13 @@
 from __future__ import annotations
 
 # Built-in Modules:
+import argparse
 import ctypes
 import os
 import sys
 from collections.abc import Callable
 from typing import Any, Literal, Optional
-
-# Third-party Modules:
-from tap import Tap
+from typing import get_args as get_type_args
 
 # Local Modules:
 from . import __version__, otp
@@ -22,85 +21,17 @@ from .clipboard import set_clipboard
 from .database import Database, Secret
 
 
-DESCRIPTION: str = "An authenticator app."
-TOKEN_FUNCTIONS: tuple[str, ...] = ("hotp", "motp", "totp")
+DESCRIPTION: str = "OTP Vault"
+VERSION: str = (
+	f"%(prog)s V{__version__} "
+	+ f"(Python {'.'.join(str(i) for i in sys.version_info[:3])} {sys.version_info.releaselevel})"
+)
+ERROR_TYPE = Callable[[str], None]
+LITERAL_TOKEN_TYPES = Literal["hotp", "motp", "totp"]
+TOKEN_TYPES: tuple[LITERAL_TOKEN_TYPES, ...] = get_type_args(LITERAL_TOKEN_TYPES)
 
 
-def get_token(token_type: str, *args: Any, **kwargs: Any) -> str:
-	if token_type not in TOKEN_FUNCTIONS:
-		raise ValueError(f"{token_type} not in {TOKEN_FUNCTIONS}.")
-	otp_function: Callable[..., str] = getattr(otp, token_type)
-	return otp_function(*args, **kwargs)
-
-
-class ArgumentParser(Tap):  # pragma: no cover
-	password: str
-	"""The password for creating or accessing the secrets database."""
-	change_password: Optional[str] = None
-	"""Changes an existing password."""
-	add: Optional[str] = None
-	"""Adds a secret to the secrets database."""
-	type: Literal["hotp", "motp", "totp"] = "totp"
-	"""Specifies the algorithm to use when adding a secret (requires --add)."""
-	length: int = 6
-	"""Specifies the desired token length (requires --add)."""
-	initial_input: str = "0"
-	"""Specifies the pin / counter / start-time used as the moving factor (requires --add)."""
-	search: Optional[str] = None
-	"""Searches for a secret by label."""
-	copy: Optional[int] = None
-	"""Copies the token for a search result to the clipboard (requires --search)."""
-	delete: Optional[int] = None
-	"""Deletes a search result from the secrets database (requires --search)."""
-	update: Optional[tuple[int, str]] = None
-	"""Updates a search result with a new label (requires --search)."""
-
-	def process_args(self) -> None:
-		# Work around for defining a mutually exclusive group in TAP.configure throws
-		# an exception if the argument is also defined as a class variable.
-		exclusive_args: list[str] = [
-			"change_password",
-			"add",
-			"search",
-		]
-		for arg in exclusive_args:
-			if arg not in self.argument_buffer:
-				raise ValueError(f"{arg} not in argument buffer.")
-		exclusive_args.sort(key=list(self.argument_buffer).index)
-		specified_exclusive_args: list[str] = [i for i in exclusive_args if getattr(self, i) is not None]
-		specified_exclusive_search_args: list[str] = [
-			i for i in ("copy", "delete", "update") if getattr(self, i) is not None
-		]
-		if len(specified_exclusive_search_args) > 1:
-			self.error(f"{specified_exclusive_search_args} are mutually exclusive")
-		elif specified_exclusive_search_args and "".join(specified_exclusive_args) != "search":
-			self.error(
-				f"--{specified_exclusive_search_args[0]} {'can only' if specified_exclusive_args else 'must'} "
-				+ "be used with --search"
-			)
-		elif len(specified_exclusive_args) > 1:
-			self.error(f"{specified_exclusive_args} are mutually exclusive")
-
-	def configure(self) -> None:
-		self.add_argument("password", metavar="password")
-		self.add_argument("--change-password", metavar="new_password")
-		self.add_argument("-a", "--add", nargs=2, metavar=("label", "key"))
-		self.add_argument("-t", "--type", metavar="type")
-		self.add_argument("-l", "--length", metavar="length")
-		self.add_argument("-i", "--initial-input", metavar="value")
-		self.add_argument("-s", "--search", metavar="text")
-		self.add_argument("-c", "--copy", metavar="result_item")
-		self.add_argument("-d", "--delete", metavar="result_item")
-		self.add_argument("-u", "--update", nargs=2, metavar=("result_item", "new_label"))
-		self.add_argument("-h", "--help", help="Shows program help.", action="help")
-		version: str = (
-			f"%(prog)s V{__version__} "
-			+ f"(Python {'.'.join(str(i) for i in sys.version_info[:3])} {sys.version_info.releaselevel})"
-		)
-		self.add_argument("-v", "--version", help="Shows program version.", action="version", version=version)
-
-
-def change_password(database: Database, error_handler: Callable[[str], None], password: str) -> None:
+def change_password(database: Database, error_handler: ERROR_TYPE, password: str) -> None:
 	"""
 	Changes the password of an existing database.
 
@@ -119,7 +50,7 @@ def change_password(database: Database, error_handler: Callable[[str], None], pa
 
 def add_secret(
 	database: Database,
-	error_handler: Callable[[str], None],
+	error_handler: ERROR_TYPE,
 	password: str,
 	label: str,
 	key: str,
@@ -150,7 +81,7 @@ def add_secret(
 
 def search_secrets(
 	database: Database,
-	error_handler: Callable[[str], None],
+	error_handler: ERROR_TYPE,
 	password: str,
 	text: str,
 	*,
@@ -186,7 +117,8 @@ def search_secrets(
 			break
 		elif copy is not None and i + 1 == copy:
 			# User has selected a valid item to be copied to the clipboard.
-			token: str = get_token(token_type, key, initial_input, length=length)
+			otp_function: Callable[..., str] = getattr(otp, token_type)
+			token: str = otp_function(key, initial_input, length=length)
 			if token_type == "hotp":
 				# The HOTP counter needs to be incremented after every use.
 				database.increment_initial_input(password, result, amount=1)
@@ -219,17 +151,108 @@ def search_secrets(
 			break
 
 
-def main(parsed_args: ArgumentParser) -> None:  # pragma: no cover
+class ArgumentNamespace(argparse.Namespace):
+	password: str
+	change_password: Optional[str] = None
+	add: Optional[tuple[str, str]] = None
+	type: LITERAL_TOKEN_TYPES = "totp"
+	length: int = 6
+	initial_input: str = "0"
+	search: Optional[str] = None
+	copy: Optional[int] = None
+	delete: Optional[int] = None
+	update: Optional[tuple[int, str]] = None
+
+
+def process_args() -> tuple[ArgumentNamespace, ERROR_TYPE]:  # pragma: no cover
+	parser = argparse.ArgumentParser(description=DESCRIPTION, add_help=False)
+	parser._positionals.title = "Required Positional Arguments"
+	parser._positionals.description = "All must be provided."
+	parser.add_argument(
+		"password", metavar="password", help="The password for creating or accessing the secrets database."
+	)
+	parser._optionals.title = "Required Named Arguments"
+	parser._optionals.description = "Mutually exclusive, 1 must be provided."
+	exclusive_commands = parser.add_mutually_exclusive_group(required=True)
+	exclusive_commands.add_argument(
+		"--change-password", metavar="new_password", help="Changes an existing password."
+	)
+	exclusive_commands.add_argument(
+		"-a", "--add", nargs=2, metavar=("label", "key"), help="Adds a secret to the secrets database."
+	)
+	exclusive_commands.add_argument("-s", "--search", metavar="text", help="Searches for a secret by label.")
+	exclusive_commands.add_argument("-h", "--help", action="help", help="Shows program help.")
+	exclusive_commands.add_argument(
+		"-v", "--version", action="version", version=VERSION, help="Shows program version."
+	)
+	add_options = parser.add_argument_group("Add Options", "Relevant when the add argument is provided.")
+	add_options.add_argument(
+		"-t",
+		"--type",
+		metavar="type",
+		choices=TOKEN_TYPES,
+		help="Specifies the algorithm to use when adding a secret.",
+	)
+	add_options.add_argument(
+		"-l", "--length", metavar="length", type=int, help="Specifies the desired token length."
+	)
+	add_options.add_argument(
+		"-i",
+		"--initial-input",
+		metavar="value",
+		help="Specifies the pin / counter / start-time used as the moving factor.",
+	)
+	search_options = parser.add_argument_group(
+		"Search Options", "Relevant when the search argument is provided."
+	)
+	search_options.add_argument(
+		"-c",
+		"--copy",
+		metavar="result_item",
+		type=int,
+		help="Copies the token of a search result to the clipboard.",
+	)
+	search_options.add_argument(
+		"-d",
+		"--delete",
+		metavar="result_item",
+		type=int,
+		help="Deletes a search result from the secrets database.",
+	)
+	search_options.add_argument(
+		"-u",
+		"--update",
+		nargs=2,
+		metavar=("result_item", "new_label"),
+		help="Updates a search result with a new label.",
+	)
+	namespace = ArgumentNamespace()
+	parsed: ArgumentNamespace = parser.parse_args(namespace=namespace)
+	if parsed.add is not None:
+		# Convert list to tuple.
+		label, key = parsed.add
+		parsed.add = (label, key)
+	if parsed.update is not None:
+		# Convert list to tuple and first item to int.
+		result_item, new_label = parsed.update
+		try:
+			result_item = int(result_item)
+		except ValueError:
+			parser.error(f"argument -u/--update: invalid int value in result_item: {result_item!r}")
+		parsed.update = (result_item, new_label)
+	return parsed, parser.error
+
+
+def main() -> None:  # pragma: no cover
+	parsed_args, error = process_args()
 	database = Database(parsed_args.password)
 	if parsed_args.change_password is not None:
-		change_password(database, parsed_args.error, parsed_args.change_password)
-	elif parsed_args.type not in TOKEN_FUNCTIONS:
-		parsed_args.error(f"{parsed_args.type} not in {list(TOKEN_FUNCTIONS)}")
+		change_password(database, error, parsed_args.change_password)
 	elif parsed_args.add is not None:
 		label, key = (i.strip() for i in parsed_args.add)
 		add_secret(
 			database,
-			parsed_args.error,
+			error,
 			parsed_args.password,
 			label,
 			key,
@@ -240,7 +263,7 @@ def main(parsed_args: ArgumentParser) -> None:  # pragma: no cover
 	elif parsed_args.search is not None:
 		search_secrets(
 			database,
-			parsed_args.error,
+			error,
 			parsed_args.password,
 			parsed_args.search,
 			copy=parsed_args.copy,
@@ -248,16 +271,14 @@ def main(parsed_args: ArgumentParser) -> None:  # pragma: no cover
 			update=parsed_args.update,
 		)
 	else:
-		parsed_args.error("Please specify an option")
+		error("Please specify an option")
 
 
 def run() -> None:  # pragma: no cover
 	if sys.platform == "win32":
 		# Set the title of the console window.
-		ctypes.windll.kernel32.SetConsoleTitleW("OTP Vault")
-	parser: ArgumentParser = ArgumentParser(underscores_to_dashes=True, description=DESCRIPTION)
-	args: ArgumentParser = parser.parse_args()
-	main(args)
+		ctypes.windll.kernel32.SetConsoleTitleW(DESCRIPTION)
+	main()
 	if sys.platform == "win32":
 		# Reset the title.
 		ctypes.windll.kernel32.SetConsoleTitleW(os.getenv("COMSPEC", "cmd"))

@@ -30,7 +30,6 @@
 	argon2-cffi = "^21.3"
 	cryptography = "^38.0"
 	jsonschema = "^4.4"
-	typed-argument-parser = "^1.7"
 
 [tool.poetry.dev-dependencies]
 	click = "8.0.4"  # Required by Tan.
@@ -172,7 +171,6 @@
 		"argon2",
 		"cryptography",
 		"jsonschema",
-		"tap",
 	]
 	# The heading to display for first-party imports.
 	import_heading_firstparty = "OTP Vault Modules:"

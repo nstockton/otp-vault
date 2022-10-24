@@ -13,7 +13,7 @@ from unittest.mock import Mock, mock_open, patch
 
 # OTP Vault Modules:
 from otp_vault.database import Database, Secret
-from otp_vault.main import add_secret, change_password, get_token, search_secrets
+from otp_vault.main import add_secret, change_password, search_secrets
 
 
 SAMPLE_PASSWORD: str = "test_password"
@@ -22,10 +22,6 @@ SAMPLE_FILENAME: str = "testdatabase-6ca2100554e249998edbe204445a9875"
 
 @patch("otp_vault.main.sys.stdout", Mock())  # Prevent output from print.
 class TestMain(TestCase):
-	def test_get_token_when_invalid_token_type(self) -> None:
-		with self.assertRaises(ValueError):
-			get_token("invalid_token")
-
 	def test_change_password_when_valid_password(self) -> None:
 		mock_error_handler: Mock = Mock()
 		with patch("otp_vault.database.open", mock_open()) as mopen:

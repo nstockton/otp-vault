@@ -50,7 +50,7 @@ otpv <PASSWORD> <OPTIONS>
     * `[-l <LENGTH> | --length <LENGTH>]`: specifies the desired token length when adding a secret (6 is default). Valid length is in range 6-10.
     * `[-i <VALUE> | --initial-input <VALUE>]`: specifies the pin / counter / start-time used as the moving factor when adding a secret ('0' is default).
 - `-s <TEXT> | --search <TEXT>`: searches for a secret by label.
-    * `[-c <RESULT_ITEM> | --copy <RESULT_ITEM>]`: copies the token for a search result to the clipboard. If the program does not support clipboard access on the current platform, the token will be printed to the screen instead.
+    * `[-c <RESULT_ITEM> | --copy <RESULT_ITEM>]`: copies the token of a search result to the clipboard. If the program does not support clipboard access on the current platform, the token will be printed to the screen instead.
     * `[-d <RESULT_ITEM> | --delete <RESULT_ITEM>]`: deletes a search result from the secrets database.
     * `[-u <RESULT_ITEM> <NEW_LABEL> | --update <RESULT_ITEM> <NEW_LABEL>]`: updates a search result with a new label.
 - `-h | --help`: shows program help.
