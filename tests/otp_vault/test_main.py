@@ -13,7 +13,7 @@ from unittest.mock import Mock, mock_open, patch
 
 # OTP Vault Modules:
 from otp_vault.database import Database, Secret
-from otp_vault.main import add_secret, change_password, search_secrets
+from otp_vault.main import add_secret, change_password, process_args, search_secrets
 
 
 SAMPLE_PASSWORD: str = "test_password"
@@ -241,3 +241,65 @@ class TestMain(TestCase):
 			search_secrets(database, mock_error_handler, SAMPLE_PASSWORD, "test", update=(2, "new_label"))
 			mock_error_handler.assert_called_once()
 			mock_save.assert_not_called()
+
+	def test_process_args_when_no_args_given(self) -> None:
+		with patch("otp_vault.main.argparse.ArgumentParser.error") as mock_error:
+			parsed, _ = process_args()
+			self.assertIsNone(parsed.change_password)
+			self.assertIsNone(parsed.add)
+			self.assertEqual(parsed.type, "totp")
+			self.assertEqual(parsed.length, 6)
+			self.assertEqual(parsed.initial_input, "0")
+			self.assertIsNone(parsed.search)
+			self.assertIsNone(parsed.copy)
+			self.assertIsNone(parsed.delete)
+			self.assertIsNone(parsed.update)
+			mock_error.assert_called()
+
+	def test_process_args_when_no_password_given(self) -> None:
+		with patch("otp_vault.main.argparse.ArgumentParser.error") as mock_error:
+			process_args("--search", "text")
+			mock_error.assert_called_once()
+
+	def test_process_args_when_no_required_exclusive_args_given(self) -> None:
+		with patch("otp_vault.main.argparse.ArgumentParser.error") as mock_error:
+			process_args("test_password")
+			mock_error.assert_called_once()
+
+	def test_process_args_when_multiple_required_exclusive_args_given(self) -> None:
+		with patch("otp_vault.main.argparse.ArgumentParser.error") as mock_error:
+			process_args("test_password", "--change-password", "new_password", "--add", "label", "key")
+			mock_error.assert_called()
+			mock_error.reset_mock()
+			process_args("test_password", "--add", "label", "key", "--search", "text")
+			mock_error.assert_called()
+			mock_error.reset_mock()
+			process_args("test_password", "--change-password", "new_password", "--search", "text")
+			mock_error.assert_called()
+
+	def test_process_args_when_valid_args(self) -> None:
+		with patch("otp_vault.main.argparse.ArgumentParser.error") as mock_error:
+			parsed, _ = process_args("test_password", "--change-password", "new_password")
+			self.assertEqual(parsed.change_password, "new_password")
+			parsed, _ = process_args("test_password", "--add", "label", "key")
+			self.assertEqual(parsed.add, ("label", "key"))
+			parsed, _ = process_args("test_password", "--add", "label", "key", "--type", "hotp")
+			self.assertEqual(parsed.type, "hotp")
+			parsed, _ = process_args("test_password", "--add", "label", "key", "--length", "8")
+			self.assertEqual(parsed.length, 8)
+			parsed, _ = process_args("test_password", "--add", "label", "key", "--initial-input", "1234")
+			self.assertEqual(parsed.initial_input, "1234")
+			parsed, _ = process_args("test_password", "--search", "text")
+			self.assertEqual(parsed.search, "text")
+			parsed, _ = process_args("test_password", "--search", "text", "--copy", "4")
+			self.assertEqual(parsed.copy, 4)
+			parsed, _ = process_args("test_password", "--search", "text", "--delete", "4")
+			self.assertEqual(parsed.delete, 4)
+			parsed, _ = process_args("test_password", "--search", "text", "--update", "4", "new_label")
+			self.assertEqual(parsed.update, (4, "new_label"))
+			mock_error.assert_not_called()
+
+	def test_process_args_when_update_item_number_invalid(self) -> None:
+		with patch("otp_vault.main.argparse.ArgumentParser.error") as mock_error:
+			parsed, _ = process_args("test_password", "--search", "text", "--update", "invalid", "new_label")
+			mock_error.assert_called_once()

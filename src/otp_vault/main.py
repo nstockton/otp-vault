@@ -164,7 +164,16 @@ class ArgumentNamespace(argparse.Namespace):
 	update: Optional[tuple[int, str]] = None
 
 
-def process_args() -> tuple[ArgumentNamespace, ERROR_TYPE]:  # pragma: no cover
+def process_args(*args: str) -> tuple[ArgumentNamespace, ERROR_TYPE]:
+	"""
+	Parses command-line arguments into an ArgumentNamespace instance.
+
+	Args:
+		*args: Arguments to parse. If no arguments are given, arguments are taken from sys.argv.
+
+	Returns:
+		A tuple containing the resulting ArgumentNamespace instance, and a callback for error handling.
+	"""
 	parser = argparse.ArgumentParser(description=DESCRIPTION, add_help=False)
 	parser._positionals.title = "Required Positional Arguments"
 	parser._positionals.description = "All must be provided."
@@ -227,7 +236,7 @@ def process_args() -> tuple[ArgumentNamespace, ERROR_TYPE]:  # pragma: no cover
 		help="Updates a search result with a new label.",
 	)
 	namespace = ArgumentNamespace()
-	parsed: ArgumentNamespace = parser.parse_args(namespace=namespace)
+	parsed: ArgumentNamespace = parser.parse_args(args=args or None, namespace=namespace)
 	if parsed.add is not None:
 		# Convert list to tuple.
 		label, key = parsed.add
