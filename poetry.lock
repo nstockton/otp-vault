@@ -582,7 +582,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 	python-versions = "^3.7"
-content-hash = "8ee1d33474fad851eab9063115dbb09b3fe126588d558ee7a7fe3aaaaddcb13f"
+content-hash = "80b4adf4a05e6206986c3e51427a65ec6e42c222d802c7536e9d2247d68359ad"
 
 [metadata.files]
 argon2-cffi = [

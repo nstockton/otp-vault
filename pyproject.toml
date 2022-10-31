@@ -45,6 +45,7 @@
 	]
 	packages = [
 		{include = "otp_vault", from = "src"},
+		{include = "otp_vault_data", from = "src"},
 	]
 	include = [
 		{path = "tests/*", format = "sdist"},
@@ -57,6 +58,7 @@
 	argon2-cffi = "^21.3"
 	cryptography = "^38.0"
 	jsonschema = "^4.4"
+	typing-extensions = {version = "^4.4", python = "<3.8"}
 
 [tool.poetry.dev-dependencies]
 	click = "8.0.4"  # Required by Tan.
@@ -73,7 +75,6 @@
 	pyrsistent = "0.18.1"  # Prevent version in Poetry requirements from being overridden.
 	tan = "^21.14"
 	types-jsonschema = "^4.4"
-	typing-extensions = "^4.4"
 
 [tool.poetry.scripts]
 	otpv = "otp_vault.main:run"
