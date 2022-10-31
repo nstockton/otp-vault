@@ -9,8 +9,11 @@ from __future__ import annotations
 # Built-in Modules:
 import ctypes
 import sys
-from ctypes import wintypes
 from typing import Any, Optional, Sequence
+
+
+if sys.platform == "win32":
+	from ctypes import wintypes
 
 
 def _decl(
@@ -29,8 +32,9 @@ def _decl(
 
 
 def _errcheck_windows(result: Any, func: Any, args: Sequence[Any]) -> Any:
-	if not result:
-		raise ctypes.WinError(ctypes.get_last_error())
+	if sys.platform == "win32":
+		if not result:
+			raise ctypes.WinError(ctypes.get_last_error())
 
 
 if sys.platform == "win32":
@@ -59,20 +63,23 @@ def _get_clipboard_windows() -> str:
 	Returns:
 		The clipboard contents.
 	"""
-	text: str = ""
-	OpenClipboard(None)
-	try:
-		handle = GetClipboardData(CF_UNICODETEXT)
-		contents = GlobalLock(handle)
-		size = GlobalSize(handle)
-		if contents and size:
-			raw_data = ctypes.create_string_buffer(size)
-			ctypes.memmove(raw_data, contents, size)
-			text = str(raw_data.raw, "utf-16le").rstrip("\0")
-		GlobalUnlock(handle)
-	finally:
-		CloseClipboard()
-	return text
+	if sys.platform == "win32":
+		text: str = ""
+		OpenClipboard(None)
+		try:
+			handle = GetClipboardData(CF_UNICODETEXT)
+			contents = GlobalLock(handle)
+			size = GlobalSize(handle)
+			if contents and size:
+				raw_data = ctypes.create_string_buffer(size)
+				ctypes.memmove(raw_data, contents, size)
+				text = str(raw_data.raw, "utf-16le").rstrip("\0")
+			GlobalUnlock(handle)
+		finally:
+			CloseClipboard()
+		return text
+	else:
+		return ""
 
 
 def _set_clipboard_windows(text: str) -> bool:
@@ -82,23 +89,23 @@ def _set_clipboard_windows(text: str) -> bool:
 	Args:
 		text: The text to copy to the clipboard.
 	"""
-	if sys.platform != "win32":
-		# Currently only Windows is supported.
+	if sys.platform == "win32":
+		data: bytes = bytes(text, "utf-16le")
+		OpenClipboard(None)
+		try:
+			EmptyClipboard()
+			handle = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, len(data) + 2)
+			contents = GlobalLock(handle)
+			ctypes.memmove(contents, data, len(data))
+			GlobalUnlock(handle)
+			SetClipboardData(CF_UNICODETEXT, handle)
+		except Exception:
+			return False
+		finally:
+			CloseClipboard()
+		return True
+	else:
 		return False
-	data: bytes = bytes(text, "utf-16le")
-	OpenClipboard(None)
-	try:
-		EmptyClipboard()
-		handle = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, len(data) + 2)
-		contents = GlobalLock(handle)
-		ctypes.memmove(contents, data, len(data))
-		GlobalUnlock(handle)
-		SetClipboardData(CF_UNICODETEXT, handle)
-	except Exception:
-		return False
-	finally:
-		CloseClipboard()
-	return True
 
 
 def get_clipboard() -> str:
