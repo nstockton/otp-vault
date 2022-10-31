@@ -24,8 +24,8 @@ Execute the following commands from the root directory of this repository to ins
 ```
 python3 -m venv .venv
 source .venv/bin/activate
-pip install --upgrade "poetry==1.1.13"
-poetry install
+pip install --upgrade --require-hashes --requirement requirements-poetry.txt
+poetry install --no-ansi
 pre-commit install -t pre-commit
 pre-commit install -t pre-push
 ```

@@ -29,7 +29,7 @@ exit /b %ERRORLEVEL%
 	echo Activating the virtual environment.
 	call .venv\scripts\activate.bat
 	echo Installing Poetry.
-	python -m pip install --upgrade "poetry==1.1.13"
+	python -m pip install --progress-bar off --upgrade --require-hashes --requirement requirements-poetry.txt
 	echo installing dependencies.
 	python -m poetry install --no-ansi
 	echo Installing pre-commit hooks.
