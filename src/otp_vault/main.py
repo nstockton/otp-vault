@@ -12,13 +12,19 @@ import ctypes
 import os
 import sys
 from typing import Any, Callable, Optional
-from typing_extensions import Literal
-from typing_extensions import get_args as get_type_args
 
 # Local Modules:
 from . import __version__, otp
 from .clipboard import set_clipboard
 from .database import Database, Secret
+
+
+if sys.version_info[:2] > (3, 7):  # pragma: no cover
+	from typing import Literal
+	from typing import get_args as get_type_args
+else:  # pragma: no cover
+	from typing_extensions import Literal
+	from typing_extensions import get_args as get_type_args
 
 
 DESCRIPTION: str = "OTP Vault"
