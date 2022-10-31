@@ -9,9 +9,8 @@ from __future__ import annotations
 # Built-in Modules:
 import ctypes
 import sys
-from collections.abc import Sequence
 from ctypes import wintypes
-from typing import Any, Optional
+from typing import Any, Optional, Sequence
 
 
 def _decl(

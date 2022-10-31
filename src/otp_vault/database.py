@@ -12,8 +12,7 @@ import json
 import os.path
 import re
 import threading
-from collections.abc import Iterator, MutableMapping
-from typing import Any, NamedTuple
+from typing import Any, Iterator, MutableMapping, NamedTuple
 
 # Third-party Modules:
 import jsonschema

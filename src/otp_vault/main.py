@@ -11,9 +11,9 @@ import argparse
 import ctypes
 import os
 import sys
-from collections.abc import Callable
-from typing import Any, Literal, Optional
-from typing import get_args as get_type_args
+from typing import Any, Callable, Optional
+from typing_extensions import Literal
+from typing_extensions import get_args as get_type_args
 
 # Local Modules:
 from . import __version__, otp

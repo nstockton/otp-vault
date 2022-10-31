@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 # Built-in Modules:
+import sys
 from contextlib import ExitStack
 from unittest import TestCase
 from unittest.mock import Mock, mock_open, patch
@@ -267,7 +268,21 @@ class TestMain(TestCase):
 			mock_error.assert_called_once()
 
 	def test_process_args_when_multiple_required_exclusive_args_given(self) -> None:
-		with patch("otp_vault.main.argparse.ArgumentParser.error") as mock_error:
+		with ExitStack() as cm:
+			if sys.version_info[:2] < (3, 9):
+				# In the argparse.ArgumentParser class, parse_args passes args and namespace
+				# to parse_known_args, which then passes them on to _parse_known_args. The
+				# parse_args method expects to receive back a tuple containing a namespace
+				# instance and a list of unrecognized args.
+				# In Python versions < 3.9, if _parse_known_args raises ArgumentError,
+				# parse_known_args calls the error method, which then exits the program.
+				# Because the error method is being mocked however, parse_known_args is
+				# allowed to return None, and parse_args ends up raising TypeError when it
+				# tries to perform iterable unpacking on an instance of None. This is fixed
+				# in later versions of Python when the exit_on_error flag was added, due to
+				# parse_known_args being modified to always return the expected tuple.
+				cm.enter_context(self.assertRaises(TypeError))
+			mock_error = cm.enter_context(patch("otp_vault.main.argparse.ArgumentParser.error"))
 			process_args("test_password", "--change-password", "new_password", "--add", "label", "key")
 			mock_error.assert_called()
 			mock_error.reset_mock()
