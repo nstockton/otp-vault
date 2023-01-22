@@ -19,12 +19,12 @@ from .clipboard import set_clipboard
 from .database import Database, Secret
 
 
-if sys.version_info[:2] > (3, 7):  # pragma: no cover
-	from typing import Literal
-	from typing import get_args as get_type_args
-else:  # pragma: no cover
+if sys.version_info < (3, 8):  # pragma: no cover
 	from typing_extensions import Literal
 	from typing_extensions import get_args as get_type_args
+else:  # pragma: no cover
+	from typing import Literal
+	from typing import get_args as get_type_args
 
 
 DESCRIPTION: str = "OTP Vault"
