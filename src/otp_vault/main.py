@@ -11,20 +11,13 @@ import argparse
 import ctypes
 import os
 import sys
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Literal, Optional
+from typing import get_args as get_type_args
 
 # Local Modules:
 from . import __version__, otp
 from .clipboard import set_clipboard
 from .database import Database, Secret
-
-
-if sys.version_info < (3, 8):  # pragma: no cover
-	from typing_extensions import Literal
-	from typing_extensions import get_args as get_type_args
-else:  # pragma: no cover
-	from typing import Literal
-	from typing import get_args as get_type_args
 
 
 DESCRIPTION: str = "OTP Vault"
@@ -170,7 +163,7 @@ class ArgumentNamespace(argparse.Namespace):
 	update: Optional[tuple[int, str]] = None
 
 
-def process_args(*args: str) -> tuple[ArgumentNamespace, ERROR_TYPE]:
+def process_args(*args: str) -> tuple[argparse.Namespace, ERROR_TYPE]:
 	"""
 	Parses command-line arguments into an ArgumentNamespace instance.
 
@@ -242,7 +235,7 @@ def process_args(*args: str) -> tuple[ArgumentNamespace, ERROR_TYPE]:
 		help="Updates a search result with a new label.",
 	)
 	namespace = ArgumentNamespace()
-	parsed: ArgumentNamespace = parser.parse_args(args=args or None, namespace=namespace)
+	parsed: argparse.Namespace = parser.parse_args(args=args or None, namespace=namespace)
 	if parsed.add is not None:
 		# Convert list to tuple.
 		label, key = parsed.add

@@ -71,7 +71,7 @@ def hotp(key: str, initial_input: str, *, length: int = 6) -> str:
 	offset: int = digest[-1] & 0xF  # Last unsigned nibble of hash.
 	digest = digest[offset : offset + 4]  # Truncate to 4 bytes starting at the offset.
 	code: int = int.from_bytes(digest, "big") & 0x7FFFFFFF
-	code %= 10 ** length
+	code %= 10**length
 	return str(code).zfill(length)
 
 

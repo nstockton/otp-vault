@@ -1,7 +1,7 @@
 [build-system]
 	requires = [
 		"poetry-core>=1.0.0",
-		"poetry-dynamic-versioning==0.20.0",
+		"poetry-dynamic-versioning==1.1.0",
 	]
 	build-backend = "poetry.core.masonry.api"
 
@@ -23,11 +23,11 @@
 		"Programming Language :: Python",
 		"Programming Language :: Python :: 3",
 		"Programming Language :: Python :: 3 :: Only",
-		"Programming Language :: Python :: 3.7",
 		"Programming Language :: Python :: 3.8",
 		"Programming Language :: Python :: 3.9",
 		"Programming Language :: Python :: 3.10",
 		"Programming Language :: Python :: 3.11",
+		"Programming Language :: Python :: 3.12",
 		"Programming Language :: Python :: Implementation",
 		"Programming Language :: Python :: Implementation :: CPython",
 		"Operating System :: MacOS",
@@ -51,30 +51,32 @@
 		{path = "tests/*", format = "sdist"},
 		{path = "poetry.lock", format = "sdist"},
 	]
-	exclude = []
+	exclude = [
+		{path = "src/otp_vault_data/.gitignore"},
+	]
 
 [tool.poetry.dependencies]
-	python = "^3.7"
+	python = "^3.8"
 	argon2-cffi = "^21.3"
 	cryptography = "^38.0"
-	jsonschema = "^4.4"
-	typing-extensions = {version = "^4.4", python = "<3.8"}
+	jsonschema = "^4.17"
 
 [tool.poetry.dev-dependencies]
+	poetry-dynamic-versioning = "1.1.0"
+	pre-commit = "^3.4"
+	types-jsonschema = "^4.17"
+
+[tool.poetry.group.lint.dependencies]
 	click = "8.0.4"  # Required by Tan.
-	coverage = {version = "^6.5", extras = ["toml"]}
-	flake8 = "^3.9"
-	flake8-tabs = "^2.3"
-	importlib-metadata = "4.13.0"  # Prevent version in Poetry requirements from being overridden.
-	isort = "^5.10.1"
+	flake8 = "5.0.4"
+	isort = "^5.12.0"
 	jinja2 = "3.0.3"  # Required by Tan.
-	mypy = ">=0.950,<1.0"
-	poetry-dynamic-versioning = "0.20.0"
-	pre-commit = "^2.17"
-	pyproject-flake8 = "^3.9"
-	pyrsistent = "0.18.1"  # Prevent version in Poetry requirements from being overridden.
-	tan = "^21.14"
-	types-jsonschema = "^4.4"
+	mypy = "^1.5"
+	pyproject-flake8 = "5.0.4"
+	tan = "^23.7"
+
+[tool.poetry.group.test.dependencies]
+	coverage = {version = "^7.3", extras = ["toml"]}
 
 [tool.poetry.scripts]
 	otpv = "otp_vault.main:run"
@@ -96,7 +98,7 @@
 	use-tabs = true
 	safe = true
 	line-length = 110
-	target-version = ["py37", "py38", "py39", "py310"]
+	target-version = ["py38", "py39", "py310", "py311", "py312"]
 	exclude = '(/(\.eggs|\.git|\.mypy_cache|\.tox|\.venv|build|dist)|__pycache__)'
 	include = '/((src|tests).*\.py[isw]?)$'
 
