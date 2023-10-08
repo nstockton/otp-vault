@@ -1,9 +1,10 @@
 * text=auto
-*.schema text eol=crlf
+*.in text eol=crlf
 *.md text eol=crlf
 *.py text eol=crlf
 *.pys text eol=crlf
 *.pyw text eol=crlf
+*.schema text eol=crlf
 *.toml text eol=crlf
 *.txt text eol=crlf
 *.yaml text eol=crlf
