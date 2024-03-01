@@ -59,12 +59,11 @@
 	python = "^3.8"
 	argon2-cffi = "^23.1"
 	cryptography = "^41.0"
-	jsonschema = "^4.2"
+	fastjsonschema = "2.19.0"
 
 [tool.poetry.dev-dependencies]
 	poetry-dynamic-versioning = {version = "1.2.0", extras = ["plugin"]}
 	pre-commit = "^3.5"
-	types-jsonschema = "^4.2"
 
 [tool.poetry.group.lint.dependencies]
 	click = "8.0.4"  # Required by Tan.
@@ -186,6 +185,8 @@
 	supported_extensions = ["py", "pyi", "pys", "pyw"]
 	extend_skip = []  # List of files to skip.
 	indent = "tab"  # String to place for indents.
+	atomic = true  # Ensures the output doesn't save if the resulting file contains syntax errors.
+	dedup_headings = true  # Only show an identical custom import heading comment once.
 	multi_line_output = 3  # Vertical hanging indent for long sections of multiple imports.
 	include_trailing_comma = true  # Include a trailing comma on multi line imports that include parentheses.
 	force_grid_wrap = 0  # Only consider line length when forcing lines to be grid wrapped.
@@ -211,7 +212,7 @@
 	known_third_party = [
 		"argon2",
 		"cryptography",
-		"jsonschema",
+		"fastjsonschema",
 	]
 	# The heading to display for first-party imports.
 	import_heading_firstparty = "OTP Vault Modules:"
@@ -234,3 +235,9 @@
 [[tool.mypy.overrides]]
 	module = "tests.*"
 	disallow_any_decorated = false
+
+[[tool.mypy.overrides]]
+	module = [
+		"fastjsonschema.*",
+	]
+	ignore_missing_imports = true

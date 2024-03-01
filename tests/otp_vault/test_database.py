@@ -13,7 +13,7 @@ from unittest import TestCase
 from unittest.mock import Mock, PropertyMock, mock_open, patch
 
 # Third-party Modules:
-from jsonschema.exceptions import ValidationError
+from fastjsonschema import JsonSchemaException
 
 # OTP Vault Modules:
 from otp_vault.database import DATA_DIRECTORY, Database, DatabaseError, Secret
@@ -52,7 +52,7 @@ class TestDatabase(TestCase):
 			# Validation expects list, not tuple.
 			database.secrets.append(["test_label", "test_key", "totp", 6, "0"])  # type: ignore[arg-type]
 			database._validate_json()
-			cm.enter_context(self.assertRaises(ValidationError))
+			cm.enter_context(self.assertRaises(JsonSchemaException))
 			# Invalid secret.
 			database.secrets.append([1])  # type: ignore[arg-type]
 			database._validate_json()

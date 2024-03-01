@@ -15,7 +15,7 @@ import threading
 from typing import Any, Iterator, MutableMapping, NamedTuple
 
 # Third-party Modules:
-import jsonschema
+import fastjsonschema
 
 # Local Modules:
 from .encryption import decrypt, encrypt
@@ -109,7 +109,7 @@ class Database(MutableMapping[str, Any]):
 		"""Validates json data against a schema."""
 		with open(self.schema_path, "r", encoding="utf-8") as f:
 			schema: dict[str, Any] = json.load(f)
-		jsonschema.validate(self._database, schema)
+		fastjsonschema.validate(schema, self._database)
 
 	def load(self, password: str) -> None:
 		"""
