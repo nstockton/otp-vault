@@ -197,7 +197,6 @@ def process_args(*args: str) -> tuple[argparse.Namespace, ERROR_TYPE]:
 	add_options.add_argument(
 		"-t",
 		"--type",
-		metavar="type",
 		choices=TOKEN_TYPES,
 		help="Specifies the algorithm to use when adding a secret.",
 	)
