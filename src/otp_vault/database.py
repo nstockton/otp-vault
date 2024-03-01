@@ -61,7 +61,7 @@ class Database(MutableMapping[str, Any]):
 		"""
 		super().__init__()
 		self._name: str = name
-		self._database: dict[str, Any] = dict()
+		self._database: dict[str, Any] = {}
 		self.load(password)
 
 	@property
