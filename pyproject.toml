@@ -58,7 +58,7 @@
 [tool.poetry.dependencies]
 	python = "^3.8"
 	argon2-cffi = "^23.1"
-	cryptography = "^41.0"
+	cryptography = "^42.0"
 	fastjsonschema = "2.19.0"
 
 [tool.poetry.dev-dependencies]
@@ -69,13 +69,13 @@
 	click = "8.0.4"  # Required by Tan.
 	flake8 = "5.0.4"
 	flake8-pyproject = "1.2.3"
-	isort = "^5.12.0"
+	isort = "^5.13"
 	jinja2 = "3.0.3"  # Required by Tan.
-	mypy = "^1.7"
+	mypy = "^1.8"
 	tan = "^23.7"
 
 [tool.poetry.group.test.dependencies]
-	coverage = {version = "^7.3", extras = ["toml"]}
+	coverage = {version = "^7.4", extras = ["toml"]}
 
 [tool.poetry.scripts]
 	otpv = "otp_vault.main:run"
