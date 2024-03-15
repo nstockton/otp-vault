@@ -93,7 +93,7 @@ repos:
         pass_filenames: true  # Pass file names as positional arguments.
         require_serial: false  # Execute in parallel.
         stages: [pre-commit, pre-merge-commit]
-        types_or: [python, spec]
+        types: [python]
       - id: tan
         name: Tan
         entry: "python -B -m black"
@@ -101,7 +101,7 @@ repos:
         pass_filenames: true  # Pass file names as positional arguments.
         require_serial: true  # Execute using a single process.
         stages: [pre-commit, pre-merge-commit]
-        types_or: [python, spec]
+        types: [python]
       - id: flake8
         name: Flake8
         entry: "python -B -m flake8"
@@ -109,7 +109,7 @@ repos:
         pass_filenames: true  # Pass file names as positional arguments.
         require_serial: true  # Execute using a single process.
         stages: [pre-commit, pre-merge-commit]
-        types_or: [python, spec]
+        types: [python]
       - id: mypy
         name: MyPy
         entry: "python -B -m mypy"
@@ -117,7 +117,7 @@ repos:
         pass_filenames: false  # Do not pass file names as positional arguments.
         require_serial: true  # Execute using a single process.
         stages: [pre-commit, pre-merge-commit]
-        types_or: [python, spec]
+        types: [python]
       - id: coverage
         name: Coverage
         entry: "python -B -m coverage report"
