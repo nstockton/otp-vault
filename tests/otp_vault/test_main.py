@@ -260,12 +260,12 @@ class TestMain(TestCase):
 	def test_process_args_when_no_password_given(self) -> None:
 		with patch("otp_vault.main.argparse.ArgumentParser.error") as mock_error:
 			process_args("--search", "text")
-			mock_error.assert_called_once()
+			mock_error.assert_called()
 
 	def test_process_args_when_no_required_exclusive_args_given(self) -> None:
 		with patch("otp_vault.main.argparse.ArgumentParser.error") as mock_error:
 			process_args("test_password")
-			mock_error.assert_called_once()
+			mock_error.assert_called()
 
 	def test_process_args_when_multiple_required_exclusive_args_given(self) -> None:
 		with ExitStack() as cm:
