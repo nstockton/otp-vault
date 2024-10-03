@@ -33,7 +33,7 @@ def motp(key: str, initial_input: str, *, length: int = 6) -> str:
 	try:
 		int(key, 16)
 	except ValueError:
-		raise ValueError("key must contain only hex digits.")
+		raise ValueError("key must contain only hex digits.") from None
 	if initial_input and not initial_input.isdigit():
 		raise ValueError("initial_input must contain only digits.")
 	if len(initial_input) != 4:
