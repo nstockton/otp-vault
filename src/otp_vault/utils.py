@@ -29,17 +29,17 @@ def get_freezer() -> Union[str, None]:
 	frozen: Union[str, bool, None] = getattr(sys, "frozen", None)
 	if frozen and hasattr(sys, "_MEIPASS"):
 		return "pyinstaller"
-	elif frozen is True:
+	if frozen is True:
 		return "cx_freeze"
-	elif frozen in ("windows_exe", "console_exe", "dll"):
+	if frozen in ("windows_exe", "console_exe", "dll"):
 		return "py2exe"
-	elif frozen == "macosx_app":
+	if frozen == "macosx_app":
 		return "py2app"
-	elif hasattr(sys, "importers"):
+	if hasattr(sys, "importers"):
 		return "old_py2exe"
-	elif _imp.is_frozen("__main__"):
+	if _imp.is_frozen("__main__"):
 		return "tools/freeze"
-	elif isinstance(frozen, str):
+	if isinstance(frozen, str):
 		return f"unknown {frozen}"
 	return None
 

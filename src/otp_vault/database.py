@@ -100,9 +100,9 @@ class Database(MutableMapping[str, Any]):
 		"""
 		if not label.strip():
 			raise ValueError("label cannot contain only white-space characters.")
-		elif label.strip() != label:
+		if label.strip() != label:
 			raise ValueError("label cannot start or end with white-space characters.")
-		elif WHITE_SPACE_EXCEPT_SPACE_REGEX.search(label) is not None:
+		if WHITE_SPACE_EXCEPT_SPACE_REGEX.search(label) is not None:
 			raise ValueError("label cannot contain white-space characters except for space.")
 
 	def _validate_json(self) -> None:
@@ -120,8 +120,8 @@ class Database(MutableMapping[str, Any]):
 		"""
 		self._database.clear()
 		if not os.path.exists(self.file_path):
-			return None
-		elif os.path.isdir(self.file_path):
+			return
+		if os.path.isdir(self.file_path):
 			raise DatabaseError(f"'{self.file_path}' is a directory, not a file.")
 		with self._database_lock:
 			with open(self.file_path, "rb") as f:
@@ -152,9 +152,9 @@ class Database(MutableMapping[str, Any]):
 		"""
 		if not password.strip():
 			raise ValueError("Password cannot contain only white-space characters.")
-		elif password.strip() != password:
+		if password.strip() != password:
 			raise ValueError("Password cannot start or end with white-space characters.")
-		elif WHITE_SPACE_EXCEPT_SPACE_REGEX.search(password) is not None:
+		if WHITE_SPACE_EXCEPT_SPACE_REGEX.search(password) is not None:
 			raise ValueError("Password cannot contain white-space characters except for space.")
 		with self._database_lock:
 			self._database["schema_version"] = SCHEMA_VERSION
@@ -219,11 +219,10 @@ class Database(MutableMapping[str, Any]):
 		text = text.strip()
 		if not text:
 			return ()
-		elif exact_match:
+		if exact_match:
 			return tuple(secret for secret in self.secrets if secret.label == text)
-		else:
-			text_regex: re.Pattern[str] = re.compile(text, flags=re.IGNORECASE | re.UNICODE)
-			return tuple(secret for secret in self.secrets if text_regex.search(secret.label) is not None)
+		text_regex: re.Pattern[str] = re.compile(text, flags=re.IGNORECASE | re.UNICODE)
+		return tuple(secret for secret in self.secrets if text_regex.search(secret.label) is not None)
 
 	def delete_secret(self, password: str, label: str) -> None:
 		"""

@@ -63,23 +63,22 @@ def _get_clipboard_windows() -> str:
 	Returns:
 		The clipboard contents.
 	"""
-	if sys.platform == "win32":
-		text: str = ""
-		OpenClipboard(None)
-		try:
-			handle = GetClipboardData(CF_UNICODETEXT)
-			contents = GlobalLock(handle)
-			size = GlobalSize(handle)
-			if contents and size:
-				raw_data = ctypes.create_string_buffer(size)
-				ctypes.memmove(raw_data, contents, size)
-				text = str(raw_data.raw, "utf-16le").rstrip("\0")
-			GlobalUnlock(handle)
-		finally:
-			CloseClipboard()
-		return text
-	else:
+	if sys.platform != "win32":
 		return ""
+	text: str = ""
+	OpenClipboard(None)
+	try:
+		handle = GetClipboardData(CF_UNICODETEXT)
+		contents = GlobalLock(handle)
+		size = GlobalSize(handle)
+		if contents and size:
+			raw_data = ctypes.create_string_buffer(size)
+			ctypes.memmove(raw_data, contents, size)
+			text = str(raw_data.raw, "utf-16le").rstrip("\0")
+		GlobalUnlock(handle)
+	finally:
+		CloseClipboard()
+	return text
 
 
 def _set_clipboard_windows(text: str) -> bool:
@@ -89,23 +88,22 @@ def _set_clipboard_windows(text: str) -> bool:
 	Args:
 		text: The text to copy to the clipboard.
 	"""
-	if sys.platform == "win32":
-		data: bytes = bytes(text, "utf-16le")
-		OpenClipboard(None)
-		try:
-			EmptyClipboard()
-			handle = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, len(data) + 2)
-			contents = GlobalLock(handle)
-			ctypes.memmove(contents, data, len(data))
-			GlobalUnlock(handle)
-			SetClipboardData(CF_UNICODETEXT, handle)
-		except Exception:
-			return False
-		finally:
-			CloseClipboard()
-		return True
-	else:
+	if sys.platform != "win32":
 		return False
+	data: bytes = bytes(text, "utf-16le")
+	OpenClipboard(None)
+	try:
+		EmptyClipboard()
+		handle = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, len(data) + 2)
+		contents = GlobalLock(handle)
+		ctypes.memmove(contents, data, len(data))
+		GlobalUnlock(handle)
+		SetClipboardData(CF_UNICODETEXT, handle)
+	except Exception:
+		return False
+	finally:
+		CloseClipboard()
+	return True
 
 
 def get_clipboard() -> str:
@@ -115,10 +113,10 @@ def get_clipboard() -> str:
 	Returns:
 		The clipboard contents.
 	"""
+	text: str = ""
 	if sys.platform == "win32":
-		return _get_clipboard_windows()
-	else:
-		return ""
+		text = _get_clipboard_windows()
+	return text
 
 
 def set_clipboard(text: str) -> bool:
@@ -128,7 +126,7 @@ def set_clipboard(text: str) -> bool:
 	Args:
 		text: The text to copy to the clipboard.
 	"""
+	status: bool = False
 	if sys.platform == "win32":
-		return _set_clipboard_windows(text)
-	else:
-		return False
+		status = _set_clipboard_windows(text)
+	return status
