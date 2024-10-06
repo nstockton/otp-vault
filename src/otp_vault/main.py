@@ -1,7 +1,9 @@
+"""The main module."""
+
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
 
 # Future Modules:
 from __future__ import annotations
@@ -151,6 +153,8 @@ def search_secrets(
 
 
 class ArgumentNamespace(argparse.Namespace):
+	"""The namespace to be used when parsing command line arguments."""
+
 	password: str
 	change_password: Optional[str] = None
 	add: Optional[tuple[str, str]] = None
@@ -251,6 +255,7 @@ def process_args(*args: str) -> tuple[argparse.Namespace, ERROR_TYPE]:
 
 
 def main() -> None:  # pragma: no cover
+	"""The main function."""
 	parsed_args, error = process_args()
 	database = Database(parsed_args.password)
 	if parsed_args.change_password is not None:
@@ -282,6 +287,7 @@ def main() -> None:  # pragma: no cover
 
 
 def run() -> None:  # pragma: no cover
+	"""Calls the main function when run as a script."""
 	if sys.platform == "win32":
 		# Set the title of the console window.
 		ctypes.windll.kernel32.SetConsoleTitleW(DESCRIPTION)

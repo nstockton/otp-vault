@@ -1,7 +1,9 @@
+"""Persistent storage to disk."""
+
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
 
 # Future Modules:
 from __future__ import annotations
@@ -45,9 +47,7 @@ class DatabaseError(Exception):
 
 
 class Database(MutableMapping[str, Any]):
-	"""
-	Implements loading and saving of the database.
-	"""
+	"""Implements loading and saving of the database."""
 
 	_database_lock: threading.RLock = threading.RLock()
 
