@@ -23,7 +23,6 @@
 		"Programming Language :: Python",
 		"Programming Language :: Python :: 3",
 		"Programming Language :: Python :: 3 :: Only",
-		"Programming Language :: Python :: 3.8",
 		"Programming Language :: Python :: 3.9",
 		"Programming Language :: Python :: 3.10",
 		"Programming Language :: Python :: 3.11",
@@ -56,7 +55,7 @@
 	]
 
 [tool.poetry.dependencies]
-	python = "^3.8"
+	python = "^3.9"
 	argon2-cffi = "^23.1"
 	cryptography = "^42.0"
 	fastjsonschema = "2.19.0"
