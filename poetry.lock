@@ -718,20 +718,20 @@ testing = ["pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)",
 
 [[package]]
 name = "knickknacks"
-version = "0.1.1"
+version = "0.2.1"
 description = "Small, reusable, miscellaneous pieces of code."
 optional = false
-python-versions = ">=3.8,<4.0"
+python-versions = ">=3.9,<4.0"
 files = [
-    {file = "knickknacks-0.1.1-py3-none-any.whl", hash = "sha256:7baf2d54527e8458e4953f1d71d61e58fd90ea7f568435531849258920982fc7"},
+    {file = "knickknacks-0.2.1-py3-none-any.whl", hash = "sha256:555e4a3611dcd4fb1d69c1043d6c3cc50f897c0301109686994b28c5fa18699a"},
 ]
 
 [package.dependencies]
-typing-extensions = {version = ">=4.1,<5.0", markers = "python_version < \"3.10\""}
+typing-extensions = {version = ">=4.8,<5.0", markers = "python_version < \"3.12\""}
 
 [package.source]
 type = "url"
-url = "https://github.com/nstockton/knickknacks/releases/download/v0.1.1/knickknacks-0.1.1-py3-none-any.whl"
+url = "https://github.com/nstockton/knickknacks/releases/download/v0.2.1/knickknacks-0.2.1-py3-none-any.whl"
 
 [[package]]
 name = "markupsafe"
@@ -1590,4 +1590,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "13cb5971ebce6322c9290b79de4f670935507b3aff822d6a435c135c6021841b"
+content-hash = "eba51b9ffaaf312296d58a9be118bb42daeb3062fb1dcf67284a81915add8804"

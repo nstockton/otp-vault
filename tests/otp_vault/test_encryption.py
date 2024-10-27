@@ -14,12 +14,20 @@ from otp_vault.encryption import (
 	InvalidEncryptedDataError,
 	InvalidHashError,
 	WrongPasswordError,
+	decode_base64,
 	decrypt,
+	encode_base64,
 	encrypt,
 )
 
 
 class TestEncryption(TestCase):
+	def test_base64_encode_and_decode(self) -> None:
+		decoded: str = "Hello world!"
+		encoded: str = "SGVsbG8gd29ybGQh"
+		self.assertEqual(decode_base64(encoded), decoded)
+		self.assertEqual(encode_base64(decoded), encoded)
+
 	def test_encryption_decryption(self) -> None:
 		password: str = "test_password"
 		unencrypted: bytes = b"Some data in plain text."

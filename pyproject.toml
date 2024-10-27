@@ -59,7 +59,7 @@
 	argon2-cffi = "^23.1"
 	cryptography = "^42.0"
 	fastjsonschema = "2.19.0"
-	knickknacks = {url = "https://github.com/nstockton/knickknacks/releases/download/v0.1.1/knickknacks-0.1.1-py3-none-any.whl"}
+	knickknacks = {url = "https://github.com/nstockton/knickknacks/releases/download/v0.2.1/knickknacks-0.2.1-py3-none-any.whl"}
 
 [tool.poetry.dev-dependencies]
 	poetry-dynamic-versioning = {version = "1.4.0", extras = ["plugin"]}
@@ -125,6 +125,9 @@
 		"D212",  # Multi-line docstring summary should start at the first line.
 		"I",  # ISort will handle imports instead of Ruff.
 		"W191",  # Indentation contains tabs.
+	]
+	typing-modules = [
+		"knickknacks.typedef",
 	]
 	unfixable = [
 		"B",  # Flake8-bugbear.

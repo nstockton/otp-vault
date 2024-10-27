@@ -18,6 +18,7 @@ from typing import Any, Iterator, MutableMapping, NamedTuple
 
 # Third-party Modules:
 import fastjsonschema
+from knickknacks.strings import hasWhiteSpaceExceptSpace, removeWhiteSpace
 
 # Local Modules:
 from .encryption import decrypt, encrypt
@@ -26,10 +27,6 @@ from .utils import get_data_path
 
 DATA_DIRECTORY: str = get_data_path()
 SCHEMA_VERSION: int = 1
-WHITE_SPACE_REGEX: re.Pattern[str] = re.compile(r"(?:\s+)", flags=re.UNICODE)
-# Use negative look-ahead to exclude the space character from the \s character class.
-# Another way to accomplish this would be to use negation (I.E. [^\S ]+).
-WHITE_SPACE_EXCEPT_SPACE_REGEX: re.Pattern[str] = re.compile(r"(?:(?![ ])\s+)", flags=re.UNICODE)
 
 
 class Secret(NamedTuple):
@@ -102,7 +99,7 @@ class Database(MutableMapping[str, Any]):
 			raise ValueError("label cannot contain only white-space characters.")
 		if label.strip() != label:
 			raise ValueError("label cannot start or end with white-space characters.")
-		if WHITE_SPACE_EXCEPT_SPACE_REGEX.search(label) is not None:
+		if hasWhiteSpaceExceptSpace(label):
 			raise ValueError("label cannot contain white-space characters except for space.")
 
 	def _validate_json(self) -> None:
@@ -154,7 +151,7 @@ class Database(MutableMapping[str, Any]):
 			raise ValueError("Password cannot contain only white-space characters.")
 		if password.strip() != password:
 			raise ValueError("Password cannot start or end with white-space characters.")
-		if WHITE_SPACE_EXCEPT_SPACE_REGEX.search(password) is not None:
+		if hasWhiteSpaceExceptSpace(password):
 			raise ValueError("Password cannot contain white-space characters except for space.")
 		with self._database_lock:
 			self._database["schema_version"] = SCHEMA_VERSION
@@ -192,9 +189,9 @@ class Database(MutableMapping[str, Any]):
 			ValueError: A key with the same label already exists in the database.
 		"""
 		self._check_secret_label_whitespace(label)
-		key = WHITE_SPACE_REGEX.sub("", key)
-		token_type = WHITE_SPACE_REGEX.sub("", token_type)
-		initial_input = WHITE_SPACE_REGEX.sub("", initial_input)
+		key = removeWhiteSpace(key)
+		token_type = removeWhiteSpace(token_type)
+		initial_input = removeWhiteSpace(initial_input)
 		input_requires_digits_types: tuple[str, ...] = ("hotp", "motp", "totp")
 		if token_type in input_requires_digits_types and not initial_input.isdigit():
 			raise ValueError(f"Initial input must be digits if token type is {token_type}.")
