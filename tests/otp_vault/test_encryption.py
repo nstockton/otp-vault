@@ -24,9 +24,13 @@ from otp_vault.encryption import (
 class TestEncryption(TestCase):
 	def test_base64_encode_and_decode(self) -> None:
 		decoded: str = "Hello world!"
+		decoded_bytes: bytes = bytes(decoded, "utf-8")
 		encoded: str = "SGVsbG8gd29ybGQh"
+		encoded_bytes: bytes = bytes(encoded, "utf-8")
 		self.assertEqual(decode_base64(encoded), decoded)
+		self.assertEqual(decode_base64(encoded_bytes), decoded_bytes)
 		self.assertEqual(encode_base64(decoded), encoded)
+		self.assertEqual(encode_base64(decoded_bytes), encoded_bytes)
 
 	def test_encryption_decryption(self) -> None:
 		password: str = "test_password"
