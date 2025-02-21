@@ -1,9 +1,9 @@
-"""Persistent storage to disk."""
-
-
+# Copyright (C) 2025 Nick Stockton
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+"""Persistent storage to disk."""
 
 # Future Modules:
 from __future__ import annotations
@@ -14,7 +14,9 @@ import json
 import os.path
 import re
 import threading
-from typing import Any, Iterator, MutableMapping, NamedTuple
+from collections.abc import Iterator, MutableMapping
+from itertools import starmap
+from typing import Any, NamedTuple
 
 # Third-party Modules:
 import fastjsonschema
@@ -82,10 +84,12 @@ class Database(MutableMapping[str, Any]):
 		secrets: list[Secret] = self._database.setdefault("secrets", [])
 		return secrets
 
-	def _get_checksum(self, data: bytes) -> str:
+	@staticmethod
+	def _get_checksum(data: bytes) -> str:
 		return hashlib.sha256(data).hexdigest().lower()
 
-	def _check_secret_label_whitespace(self, label: str) -> None:
+	@staticmethod
+	def _check_secret_label_whitespace(label: str) -> None:
 		"""
 		Checks a secret label for invalid use of white-space characters.
 
@@ -104,7 +108,7 @@ class Database(MutableMapping[str, Any]):
 
 	def _validate_json(self) -> None:
 		"""Validates json data against a schema."""
-		with open(self.schema_path, "r", encoding="utf-8") as f:
+		with open(self.schema_path, encoding="utf-8") as f:
 			schema: dict[str, Any] = json.load(f)
 		fastjsonschema.validate(schema, self._database)
 
@@ -114,6 +118,9 @@ class Database(MutableMapping[str, Any]):
 
 		Args:
 			password: The password for decrypting the database.
+
+		Raises:
+			DatabaseError: There was a problem reading the database.
 		"""
 		self._database.clear()
 		if not os.path.exists(self.file_path):
@@ -134,7 +141,7 @@ class Database(MutableMapping[str, Any]):
 			# Sort and convert secret items from the lists that json saves them as.
 			secrets = sorted(self.secrets, key=lambda secret: secret[0].lower())
 			self.secrets.clear()
-			self.secrets.extend(Secret(*s) for s in secrets)
+			self.secrets.extend(starmap(Secret, secrets))
 		if needs_rehash:
 			# Default values for the password hasher have been updated since the database was last saved.
 			# Encrypt the database with the new values and save it to disk.
@@ -146,6 +153,9 @@ class Database(MutableMapping[str, Any]):
 
 		Args:
 			password: The password for encrypting the database.
+
+		Raises:
+			ValueError: Invalid password.
 		"""
 		if not password.strip():
 			raise ValueError("Password cannot contain only white-space characters.")
@@ -165,7 +175,7 @@ class Database(MutableMapping[str, Any]):
 				f.write(bytes(f"{pw_hash}\n", "utf-8"))
 				f.write(enc_data)
 
-	def add_secret(
+	def add_secret(  # NOQA: PLR0913, PLR0917
 		self,
 		password: str,
 		label: str,

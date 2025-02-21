@@ -1,9 +1,9 @@
-"""OTP encryption."""
-
-
+# Copyright (C) 2025 Nick Stockton
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+"""OTP encryption."""
 
 # Future Modules:
 from __future__ import annotations
@@ -79,13 +79,13 @@ def hash_password(password: str) -> str:
 	return hasher.hash(password)
 
 
-def verify_password(password: str, hash: str) -> bool:
+def verify_password(password: str, pw_hash: str) -> bool:
 	"""
 	Verifies a password against a hash.
 
 	Args:
 		password: A password in plain text.
-		hash: A password hash.
+		pw_hash: A password hash.
 
 	Returns:
 		True if the password needs rehashing, False otherwise.
@@ -96,27 +96,27 @@ def verify_password(password: str, hash: str) -> bool:
 	"""
 	hasher = argon2.PasswordHasher()
 	try:
-		hasher.verify(hash, password)
+		hasher.verify(pw_hash, password)
 	except argon2.exceptions.VerifyMismatchError:
 		raise WrongPasswordError("Password does not match hash.") from None
 	except argon2.exceptions.InvalidHash:
 		raise InvalidHashError("Invalid hash.") from None
-	return hasher.check_needs_rehash(hash)
+	return hasher.check_needs_rehash(pw_hash)
 
 
-def generate_fernet_key(password: str, hash: str) -> bytes:
+def generate_fernet_key(password: str, pw_hash: str) -> bytes:
 	"""
 	Generates a Fernet key (required when instantiating the Fernet class).
 
 	Args:
 		password: A password in plain text.
-		hash: The Argon2 hash of the password.
+		pw_hash: The Argon2 hash of the password.
 
 	Returns:
 		The generated Fernet key.
 	"""
-	parameters: argon2.Parameters = argon2.extract_parameters(hash)
-	salt: str = hash.split("$")[-2]
+	parameters: argon2.Parameters = argon2.extract_parameters(pw_hash)
+	salt: str = pw_hash.split("$")[-2]
 	raw_hash: bytes = argon2.low_level.hash_secret_raw(
 		secret=bytes(password, "utf_16_le"),
 		salt=bytes(salt, "utf_16_le"),
@@ -141,30 +141,30 @@ def encrypt(password: str, data: bytes) -> tuple[str, bytes]:
 	Returns:
 		A tuple containing an Argon2 hash and the associated encrypted data.
 	"""
-	hash: str = hash_password(password)
-	key: bytes = generate_fernet_key(password, hash)
+	pw_hash: str = hash_password(password)
+	key: bytes = generate_fernet_key(password, pw_hash)
 	fernet = Fernet(key)
 	encrypted_data: bytes = fernet.encrypt(data)
-	return hash, encrypted_data
+	return pw_hash, encrypted_data
 
 
-def decrypt(password: str, hash: str, data: bytes) -> tuple[bytes, bool]:
+def decrypt(password: str, pw_hash: str, data: bytes) -> tuple[bytes, bool]:
 	"""
-	decrypts data using a password.
+	Decrypts data using a password.
 
 	Args:
 		password: A password in plain text.
-		hash: The Argon2 hash associated with the encrypted data.
+		pw_hash: The Argon2 hash associated with the encrypted data.
 		data: The encrypted data to be decrypted.
 
 	Returns:
 		A tuple containing the decrypted data, and a boolean representing if the password needs rehashing.
 
 	Raises:
-		WrongPasswordError: The data cannot be decrypted with password.
+		InvalidEncryptedDataError: Data to be decrypted is invalid.
 	"""
-	needs_rehash: bool = verify_password(password, hash)
-	key: bytes = generate_fernet_key(password, hash)
+	needs_rehash: bool = verify_password(password, pw_hash)
+	key: bytes = generate_fernet_key(password, pw_hash)
 	fernet = Fernet(key)
 	try:
 		decrypted_data: bytes = fernet.decrypt(data)

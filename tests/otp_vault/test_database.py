@@ -1,7 +1,7 @@
+# Copyright (C) 2025 Nick Stockton
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
 
 # Future Modules:
 from __future__ import annotations
@@ -20,7 +20,7 @@ from otp_vault.database import DATA_DIRECTORY, Database, DatabaseError, Secret
 from otp_vault.encryption import decrypt
 
 
-SAMPLE_PASSWORD: str = "test_password"
+SAMPLE_PASSWORD: str = "test_password"  # NOQA: S105
 SAMPLE_FILENAME: str = "testdatabase-878d2b571a6e41d5b0cd61f8c98a13ae"
 SAMPLE_DATA: bytes = (
 	b"0949f70993ec9836d292a3600f1bb9d169268f7aed48c16fe5824b2ca280472b\n"
@@ -35,12 +35,12 @@ class TestDatabase(TestCase):
 	def test_check_secret_label_whitespace(self) -> None:
 		database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 		with self.assertRaises(ValueError):
-			database._check_secret_label_whitespace(" ")
+			database._check_secret_label_whitespace(" ")  # NOQA: SLF001
 		with self.assertRaises(ValueError):
-			database._check_secret_label_whitespace(" invalid ")
+			database._check_secret_label_whitespace(" invalid ")  # NOQA: SLF001
 		with self.assertRaises(ValueError):
-			database._check_secret_label_whitespace("invalid\twhitespace")
-		database._check_secret_label_whitespace("this is a valid string")
+			database._check_secret_label_whitespace("invalid\twhitespace")  # NOQA: SLF001
+		database._check_secret_label_whitespace("this is a valid string")  # NOQA: SLF001
 
 	def test_validate_json(self) -> None:
 		with ExitStack() as cm:
@@ -51,11 +51,11 @@ class TestDatabase(TestCase):
 			database["schema_version"] = 1
 			# Validation expects list, not tuple.
 			database.secrets.append(["test_label", "test_key", "totp", 6, "0"])  # type: ignore[arg-type]
-			database._validate_json()
+			database._validate_json()  # NOQA: SLF001
 			cm.enter_context(self.assertRaises(JsonSchemaException))
 			# Invalid secret.
 			database.secrets.append([1])  # type: ignore[arg-type]
-			database._validate_json()
+			database._validate_json()  # NOQA: SLF001
 
 	@patch("otp_vault.database.os")
 	def test_load_when_location_does_not_exist(self, mock_os: Mock) -> None:
@@ -110,7 +110,7 @@ class TestDatabase(TestCase):
 			cm.enter_context(patch.object(Database, "_validate_json"))
 			mock_decrypt = cm.enter_context(patch("otp_vault.database.decrypt"))
 			mock_save = cm.enter_context(patch.object(Database, "save"))
-			checksum, pw_hash = str(SAMPLE_DATA, "utf-8").splitlines()[:2]
+			_, pw_hash = str(SAMPLE_DATA, "utf-8").splitlines()[:2]
 			enc_data: bytes = SAMPLE_DATA.splitlines()[2]
 			dec_data, _ = decrypt(SAMPLE_PASSWORD, pw_hash, enc_data)
 			mock_decrypt.return_value = (dec_data, True)
@@ -135,7 +135,7 @@ class TestDatabase(TestCase):
 		saved_data: bytearray = bytearray()
 		# Test saving a database.
 		with patch("otp_vault.database.open", mock_open()) as mopen:
-			mopen.return_value.write.side_effect = lambda d: saved_data.extend(d)
+			mopen.return_value.write.side_effect = saved_data.extend
 			mock_os.path.exists.return_value = False
 			database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 			database.secrets.append(Secret("test_label", "test_key", "totp", 6, "0"))
@@ -182,7 +182,7 @@ class TestDatabase(TestCase):
 		database.secrets.append(Secret("alpha", "apple", "totp", 6, "0"))
 		database.secrets.append(Secret("beta", "banana", "totp", 6, "0"))
 		database.secrets.append(Secret("Charley", "cantaloupe", "totp", 6, "0"))
-		# Empty search text should always return immediately.
+		# Empty search text.
 		self.assertEqual(len(database.search_secrets("", exact_match=True)), 0)
 
 	def test_search_secrets_when_exact_match_and_results_found(self) -> None:
@@ -255,6 +255,6 @@ class TestDatabase(TestCase):
 		database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
 		database["alpha"] = "apple"  # __setitem__
 		self.assertEqual(database["alpha"], "apple")  # __getitem__
-		self.assertEqual(dict(database), database._database)  # __iter__
+		self.assertEqual(dict(database), database._database)  # __iter__  # NOQA: SLF001
 		self.assertEqual(len(database), 1)  # __len__
 		del database["alpha"]  # __delitem__

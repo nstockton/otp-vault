@@ -1,15 +1,15 @@
-"""Misc utility functions."""
-
-
+# Copyright (C) 2025 Nick Stockton
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+"""Misc utility functions."""
 
 # Future Modules:
 from __future__ import annotations
 
 # Built-in Modules:
-import os
+from pathlib import Path
 
 # Third-party Modules:
 from knickknacks.platforms import getDirectoryPath, isFrozen
@@ -28,5 +28,7 @@ def get_data_path(*args: str) -> str:
 	Returns:
 		The path.
 	"""
-	path: str = getDirectoryPath(os.path.curdir if isFrozen() else os.path.pardir, DATA_DIRECTORY)
-	return os.path.realpath(os.path.join(path, *args))
+	path = Path(getDirectoryPath())
+	if not isFrozen():
+		path = path.parent
+	return str(path.joinpath(DATA_DIRECTORY, *args).resolve())

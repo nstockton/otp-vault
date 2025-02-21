@@ -1,7 +1,7 @@
+# Copyright (C) 2025 Nick Stockton
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
 
 # Future Modules:
 from __future__ import annotations
@@ -16,7 +16,7 @@ from otp_vault.database import Database, Secret
 from otp_vault.main import add_secret, change_password, process_args, search_secrets
 
 
-SAMPLE_PASSWORD: str = "test_password"
+SAMPLE_PASSWORD: str = "test_password"  # NOQA: S105
 SAMPLE_FILENAME: str = "testdatabase-6ca2100554e249998edbe204445a9875"
 
 
@@ -301,5 +301,5 @@ class TestMain(TestCase):
 
 	def test_process_args_when_update_item_number_invalid(self) -> None:
 		with patch("otp_vault.main.argparse.ArgumentParser.error") as mock_error:
-			parsed, _ = process_args("test_password", "--search", "text", "--update", "invalid", "new_label")
+			process_args("test_password", "--search", "text", "--update", "invalid", "new_label")
 			mock_error.assert_called_once()

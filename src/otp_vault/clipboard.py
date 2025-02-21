@@ -1,9 +1,9 @@
-"""Clipboard reading and writing."""
-
-
+# Copyright (C) 2025 Nick Stockton
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+"""Clipboard reading and writing."""
 
 # Future Modules:
 from __future__ import annotations
@@ -11,7 +11,8 @@ from __future__ import annotations
 # Built-in Modules:
 import ctypes
 import sys
-from typing import Any, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Optional
 
 
 if sys.platform == "win32":
@@ -88,6 +89,9 @@ def _set_clipboard_windows(text: str) -> bool:
 
 	Args:
 		text: The text to copy to the clipboard.
+
+	Returns:
+		True if success, False otherwise.
 	"""
 	status: bool = False
 	if sys.platform == "win32":
@@ -101,7 +105,7 @@ def _set_clipboard_windows(text: str) -> bool:
 			GlobalUnlock(handle)
 			SetClipboardData(CF_UNICODETEXT, handle)
 			status = True
-		except Exception:
+		except Exception:  # NOQA: BLE001
 			status = False
 		finally:
 			CloseClipboard()
@@ -127,6 +131,9 @@ def set_clipboard(text: str) -> bool:
 
 	Args:
 		text: The text to copy to the clipboard.
+
+	Returns:
+		True if success, False otherwise.
 	"""
 	status: bool = False
 	if sys.platform == "win32":

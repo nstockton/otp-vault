@@ -1,9 +1,9 @@
-"""Various OTP algorithms."""
-
-
+# Copyright (C) 2025 Nick Stockton
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+"""Various OTP algorithms."""
 
 # Future Modules:
 from __future__ import annotations
@@ -13,6 +13,11 @@ import base64
 import hashlib
 import hmac
 import time
+
+
+MIN_HOTP_LENGTH: int = 6
+MAX_HOTP_LENGTH: int = 10
+MOTP_INITIAL_INPUT_LENGTH: int = 4
 
 
 def motp(key: str, initial_input: str, *, length: int = 6) -> str:
@@ -29,6 +34,9 @@ def motp(key: str, initial_input: str, *, length: int = 6) -> str:
 
 	Returns:
 		The MOTP value as a string of alphanumeric hex with the desired length.
+
+	Raises:
+		ValueError: Invalid argument given.
 	"""
 	key = key.strip()
 	initial_input = initial_input.strip()
@@ -38,11 +46,11 @@ def motp(key: str, initial_input: str, *, length: int = 6) -> str:
 		raise ValueError("key must contain only hex digits.") from None
 	if initial_input and not initial_input.isdigit():
 		raise ValueError("initial_input must contain only digits.")
-	if len(initial_input) != 4:
+	if len(initial_input) != MOTP_INITIAL_INPUT_LENGTH:
 		raise ValueError("initial_input must have length 4.")
 	counter: int = int(time.time()) // 10
 	data: bytes = bytes(f"{counter}{key}{initial_input}", "us-ascii")
-	return hashlib.md5(data).hexdigest()[:length]
+	return hashlib.md5(data).hexdigest()[:length]  # NOQA: S324
 
 
 def hotp(key: str, initial_input: str, *, length: int = 6) -> str:
@@ -59,11 +67,14 @@ def hotp(key: str, initial_input: str, *, length: int = 6) -> str:
 
 	Returns:
 		The HOTP value as a string of digits with the desired length.
+
+	Raises:
+		ValueError: Invalid argument given.
 	"""
 	if not initial_input.isdigit():
 		raise ValueError("initial_input must contain only digits.")
-	if not 6 <= length <= 10:  # Interval comparison.
-		raise ValueError("length must be in range 6-10 (inclusive).")
+	if not MIN_HOTP_LENGTH <= length <= MAX_HOTP_LENGTH:  # Interval comparison.
+		raise ValueError(f"length must be in range {MIN_HOTP_LENGTH}-{MAX_HOTP_LENGTH} (inclusive).")
 	counter: int = int(initial_input)
 	width: int = len(key) + 7 & -8  # Round up by multiples of 8.
 	key = key.ljust(width, "=")  # padding to an 8-character boundary.

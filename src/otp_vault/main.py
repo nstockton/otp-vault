@@ -1,9 +1,9 @@
-"""The main module."""
-
-
+# Copyright (C) 2025 Nick Stockton
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+"""The main module."""
 
 # Future Modules:
 from __future__ import annotations
@@ -13,8 +13,12 @@ import argparse
 import ctypes
 import os
 import sys
-from typing import Any, Callable, Literal, Optional
+from collections.abc import Callable
+from typing import Any, Literal, Optional
 from typing import get_args as get_type_args
+
+# Third-party Modules:
+from knickknacks.typedef import TypeAlias
 
 # Local Modules:
 from . import __version__, otp
@@ -27,8 +31,8 @@ VERSION: str = (
 	f"%(prog)s V{__version__} "
 	+ f"(Python {'.'.join(str(i) for i in sys.version_info[:3])} {sys.version_info.releaselevel})"
 )
-ERROR_TYPE = Callable[[str], None]
-LITERAL_TOKEN_TYPES = Literal["hotp", "motp", "totp"]
+ERROR_TYPE: TypeAlias = Callable[[str], None]
+LITERAL_TOKEN_TYPES: TypeAlias = Literal["hotp", "motp", "totp"]
 TOKEN_TYPES: tuple[LITERAL_TOKEN_TYPES, ...] = get_type_args(LITERAL_TOKEN_TYPES)
 
 
@@ -49,7 +53,7 @@ def change_password(database: Database, error_handler: ERROR_TYPE, password: str
 		print("Password successfully changed.")
 
 
-def add_secret(
+def add_secret(  # NOQA: PLR0913, PLR0917
 	database: Database,
 	error_handler: ERROR_TYPE,
 	password: str,
@@ -80,7 +84,7 @@ def add_secret(
 		print(f"Secret {label} added to database.")
 
 
-def search_secrets(
+def search_secrets(  # NOQA: PLR0913
 	database: Database,
 	error_handler: ERROR_TYPE,
 	password: str,
@@ -120,7 +124,7 @@ def search_secrets(
 			# User has selected a valid item to be copied to the clipboard.
 			otp_function: Callable[..., str] = getattr(otp, token_type)
 			token: str = otp_function(key, initial_input, length=length)
-			if token_type == "hotp":
+			if token_type == "hotp":  # NOQA: S105
 				# The HOTP counter needs to be incremented after every use.
 				database.increment_initial_input(password, result, amount=1)
 			status: bool = set_clipboard(token)
@@ -178,13 +182,13 @@ def process_args(*args: str) -> tuple[argparse.Namespace, ERROR_TYPE]:
 		A tuple containing the resulting ArgumentNamespace instance, and a callback for error handling.
 	"""
 	parser = argparse.ArgumentParser(description=DESCRIPTION, add_help=False)
-	parser._positionals.title = "Required Positional Arguments"
-	parser._positionals.description = "All must be provided."
+	parser._positionals.title = "Required Positional Arguments"  # NOQA: SLF001
+	parser._positionals.description = "All must be provided."  # NOQA: SLF001
 	parser.add_argument(
 		"password", metavar="password", help="The password for creating or accessing the secrets database."
 	)
-	parser._optionals.title = "Required Named Arguments"
-	parser._optionals.description = "Mutually exclusive, 1 must be provided."
+	parser._optionals.title = "Required Named Arguments"  # NOQA: SLF001
+	parser._optionals.description = "Mutually exclusive, 1 must be provided."  # NOQA: SLF001
 	exclusive_commands = parser.add_mutually_exclusive_group(required=True)
 	exclusive_commands.add_argument(
 		"--change-password", metavar="new_password", help="Changes an existing password."
