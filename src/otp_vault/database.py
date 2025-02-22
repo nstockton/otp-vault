@@ -20,7 +20,7 @@ from typing import Any, NamedTuple
 
 # Third-party Modules:
 import fastjsonschema
-from knickknacks.strings import hasWhiteSpaceExceptSpace, removeWhiteSpace
+from knickknacks.strings import has_white_space_except_space, remove_white_space
 
 # Local Modules:
 from .encryption import decrypt, encrypt
@@ -103,7 +103,7 @@ class Database(MutableMapping[str, Any]):
 			raise ValueError("label cannot contain only white-space characters.")
 		if label.strip() != label:
 			raise ValueError("label cannot start or end with white-space characters.")
-		if hasWhiteSpaceExceptSpace(label):
+		if has_white_space_except_space(label):
 			raise ValueError("label cannot contain white-space characters except for space.")
 
 	def _validate_json(self) -> None:
@@ -161,7 +161,7 @@ class Database(MutableMapping[str, Any]):
 			raise ValueError("Password cannot contain only white-space characters.")
 		if password.strip() != password:
 			raise ValueError("Password cannot start or end with white-space characters.")
-		if hasWhiteSpaceExceptSpace(password):
+		if has_white_space_except_space(password):
 			raise ValueError("Password cannot contain white-space characters except for space.")
 		with self._database_lock:
 			self._database["schema_version"] = SCHEMA_VERSION
@@ -199,9 +199,9 @@ class Database(MutableMapping[str, Any]):
 			ValueError: A key with the same label already exists in the database.
 		"""
 		self._check_secret_label_whitespace(label)
-		key = removeWhiteSpace(key)
-		token_type = removeWhiteSpace(token_type)
-		initial_input = removeWhiteSpace(initial_input)
+		key = remove_white_space(key)
+		token_type = remove_white_space(token_type)
+		initial_input = remove_white_space(initial_input)
 		input_requires_digits_types: tuple[str, ...] = ("hotp", "motp", "totp")
 		if token_type in input_requires_digits_types and not initial_input.isdigit():
 			raise ValueError(f"Initial input must be digits if token type is {token_type}.")

@@ -12,7 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 
 # Third-party Modules:
-from knickknacks.platforms import getDirectoryPath, isFrozen
+from knickknacks.platforms import get_directory_path, is_frozen
 
 
 DATA_DIRECTORY: str = "otp_vault_data"
@@ -28,7 +28,7 @@ def get_data_path(*args: str) -> str:
 	Returns:
 		The path.
 	"""
-	path = Path(getDirectoryPath())
-	if not isFrozen():
+	path = Path(get_directory_path())
+	if not is_frozen():
 		path = path.parent
 	return str(path.joinpath(DATA_DIRECTORY, *args).resolve())

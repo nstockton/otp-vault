@@ -15,7 +15,7 @@
 		"argon2-cffi>=23.1,<24.0",
 		"cryptography>=42.0,<43.0",
 		"fastjsonschema==2.21.1",
-		"knickknacks @ https://github.com/nstockton/knickknacks/releases/download/v0.2.1/knickknacks-0.2.1-py3-none-any.whl",
+		"knickknacks @ https://github.com/nstockton/knickknacks/releases/download/v0.5.0/knickknacks-0.5.0-py3-none-any.whl",
 	]
 	dynamic = ["version"]
 	keywords = [

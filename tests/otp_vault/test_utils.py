@@ -15,7 +15,7 @@ from otp_vault import utils
 
 
 class TestUtils(TestCase):
-	@mock.patch("otp_vault.utils.isFrozen")
+	@mock.patch("otp_vault.utils.is_frozen")
 	def test_get_data_path(self, mock_is_frozen: mock.Mock) -> None:
 		subdirectory: tuple[str, ...] = ("level1", "level2")
 		frozen_output = str(
