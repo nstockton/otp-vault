@@ -84,6 +84,25 @@ def add_secret(  # NOQA: PLR0913, PLR0917
 		print(f"Secret {label} added to database.")
 
 
+def dump_secrets(database: Database, error_handler: ERROR_TYPE) -> None:
+	"""
+	Dumps the secrets in a database.
+
+	Args:
+		database: The database to dump.
+		error_handler: A callback function to be called when an exception is raised.
+	"""
+	if not database.secrets:
+		sys.exit("No secrets to dump.")  # Prints to STDERR and exits with status code 1.
+	results: list[str] = []
+	for label, key, token_type, length, initial_input in database.secrets:
+		results.append(
+			f"label: {label!r}, key: {key!r}, token_type: {token_type!r}, "
+			+ f"length: {length!r}, initial_input: {initial_input!r}"
+		)
+	print("\n".join(results))
+
+
 def search_secrets(  # NOQA: PLR0913
 	database: Database,
 	error_handler: ERROR_TYPE,
@@ -165,6 +184,7 @@ class ArgumentNamespace(argparse.Namespace):
 	type: LITERAL_TOKEN_TYPES = "totp"
 	length: int = 6
 	initial_input: str = "0"
+	dump: bool = False
 	search: Optional[str] = None
 	copy: Optional[int] = None
 	delete: Optional[int] = None
@@ -196,6 +216,7 @@ def process_args(*args: str) -> tuple[argparse.Namespace, ERROR_TYPE]:
 	exclusive_commands.add_argument(
 		"-a", "--add", nargs=2, metavar=("label", "key"), help="Adds a secret to the secrets database."
 	)
+	exclusive_commands.add_argument("-D", "--dump", action="store_true", help="Dumps the database.")
 	exclusive_commands.add_argument("-s", "--search", metavar="text", help="Searches for a secret by label.")
 	exclusive_commands.add_argument("-h", "--help", action="help", help="Shows program help.")
 	exclusive_commands.add_argument(
@@ -276,6 +297,8 @@ def main() -> None:  # pragma: no cover
 			parsed_args.length,
 			parsed_args.initial_input,
 		)
+	elif parsed_args.dump:
+		dump_secrets(database, error)
 	elif parsed_args.search is not None:
 		search_secrets(
 			database,

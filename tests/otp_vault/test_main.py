@@ -13,7 +13,7 @@ from unittest.mock import Mock, mock_open, patch
 
 # OTP Vault Modules:
 from otp_vault.database import Database, Secret
-from otp_vault.main import add_secret, change_password, process_args, search_secrets
+from otp_vault.main import add_secret, change_password, dump_secrets, process_args, search_secrets
 
 
 SAMPLE_PASSWORD: str = "test_password"  # NOQA: S105
@@ -98,6 +98,29 @@ class TestMain(TestCase):
 			self.assertIn(after, database.secrets)
 			mock_error_handler.assert_not_called()
 			mock_save.assert_called_once_with(SAMPLE_PASSWORD)
+
+	def test_dump_secrets_when_print_results(self) -> None:
+		mock_error_handler: Mock = Mock()
+		with ExitStack() as cm:
+			mopen = cm.enter_context(patch("otp_vault.database.open", mock_open()))
+			mock_print = cm.enter_context(patch("otp_vault.main.print"))
+			database: Database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
+			database.add_secret(SAMPLE_PASSWORD, "test_label1", "test_key1", "totp", 6, "0")
+			database.add_secret(SAMPLE_PASSWORD, "test_label2", "test_key2", "totp", 6, "0")
+			dump_secrets(database, mock_error_handler)
+			mock_error_handler.assert_not_called()
+			mock_print.assert_called_once()
+			mopen.assert_called()
+
+	def test_dump_secrets_when_no_results(self) -> None:
+		mock_error_handler: Mock = Mock()
+		with ExitStack() as cm:
+			mopen = cm.enter_context(patch("otp_vault.database.open", mock_open()))
+			mock_sys_exit = cm.enter_context(patch("otp_vault.main.sys.exit"))
+			database: Database = Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
+			dump_secrets(database, mock_error_handler)
+			mock_sys_exit.assert_called_once()
+			mopen.assert_not_called()
 
 	def test_search_secrets_when_print_results(self) -> None:
 		mock_error_handler: Mock = Mock()
