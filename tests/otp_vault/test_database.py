@@ -1,4 +1,5 @@
-# Copyright (C) 2025 Nick Stockton
+# Copyright (C) 2026 Nick Stockton
+# SPDX-License-Identifier: MPL-2.0
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -17,16 +18,15 @@ from fastjsonschema import JsonSchemaException
 
 # OTP Vault Modules:
 from otp_vault.database import DATA_DIRECTORY, Database, DatabaseError, Secret
-from otp_vault.encryption import decrypt
 
 
 SAMPLE_PASSWORD: str = "test_password"  # NOQA: S105
 SAMPLE_FILENAME: str = "testdatabase-878d2b571a6e41d5b0cd61f8c98a13ae"
 SAMPLE_DATA: bytes = (
-	b"0949f70993ec9836d292a3600f1bb9d169268f7aed48c16fe5824b2ca280472b\n"
-	+ b"$argon2id$v=19$m=65536,t=3,p=4$JpMbcmo8O4jCdPD+xEvgKQ$jO+MDuERIvD8uGvCdygqje5eP4XaMsmf0vbl8R3q0hY\n"
-	+ b"gAAAAABjQ8WPoOc_euZ5agxAjGYk3GWlYarUnyJPvRgjtkqk_e4cNKD1P9tZVFj2liKoazRhkGqr_Up26x6_u0FjZVpj"
-	+ b"QHKa0Rl1A9X6-41ubytQUczLATp-NZDn7-YVgHqwjxgMfDAWABgJLN8wvDhrQ5f46t97GVgRlIFdi9COJlQlaxBcSAk="
+	b"ef298b843075dcbce193ab3bf5af6496bebb0fb414840441a4fcbfbf180f2823\n"
+	+ b"C5nV4E5xo9z5ueVjY9o0pQ==\n"
+	+ b"gAAAAABqORNFhmdCO5kX-fun6go37gkTcTW0nM0qhkzAxncQYC-mICFHbniKJyrR6FdJo3dlrHEuijBvkxb7unSIhdxr"
+	+ b"N_NfLi51DW6bFOTvjA0okjlo9567ob0P-rzBTRFJ3omRSwY7AJcuHsPIL-dU8ME0gIORaQkpn-IXNoGSqtxVPbHkM6k="
 )
 
 
@@ -100,22 +100,6 @@ class TestDatabase(TestCase):
 			self.assertIn("secrets", database)
 			self.assertEqual(len(database.secrets), 1)
 			self.assertIn(Secret("test_label", "test_key", "totp", 6, "0"), database.secrets)
-
-	@patch("otp_vault.database.os")
-	def test_load_when_valid_data_needs_password_rehash(self, mock_os: Mock) -> None:
-		mock_os.path.exists.return_value = True
-		mock_os.path.isdir.return_value = False
-		with ExitStack() as cm:
-			cm.enter_context(patch("otp_vault.database.open", mock_open(read_data=SAMPLE_DATA)))
-			cm.enter_context(patch.object(Database, "_validate_json"))
-			mock_decrypt = cm.enter_context(patch("otp_vault.database.decrypt"))
-			mock_save = cm.enter_context(patch.object(Database, "save"))
-			_, pw_hash = str(SAMPLE_DATA, "utf-8").splitlines()[:2]
-			enc_data: bytes = SAMPLE_DATA.splitlines()[2]
-			dec_data, _ = decrypt(SAMPLE_PASSWORD, pw_hash, enc_data)
-			mock_decrypt.return_value = (dec_data, True)
-			Database(SAMPLE_PASSWORD, SAMPLE_FILENAME)
-			mock_save.assert_called_once_with(SAMPLE_PASSWORD)
 
 	def test_save_when_invalid_password(self) -> None:
 		with patch("otp_vault.database.open", mock_open()) as mopen:

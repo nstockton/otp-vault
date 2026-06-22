@@ -1,32 +1,34 @@
-# Copyright (C) 2025 Nick Stockton
+# Copyright (C) 2026 Nick Stockton
+# SPDX-License-Identifier: MPL-2.0
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""OTP encryption."""
+"""Encryption."""
 
 # Future Modules:
 from __future__ import annotations
 
 # Built-in Modules:
 import base64
+import secrets
+from typing import Final
 
 # Third-party Modules:
-import argon2
 from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.primitives.kdf.argon2 import Argon2id
 from knickknacks.typedef import BytesOrStrType
+
+
+SALT_LENGTH: Final[int] = 16
 
 
 class DecryptionError(Exception):
 	"""Base class for decryption errors."""
 
 
-class InvalidHashError(DecryptionError):
-	"""Raised when a hash is invalid or corrupted."""
-
-
 class WrongPasswordError(DecryptionError):
-	"""Raised when a password does not match a hash."""
+	"""Raised when a password does not match (decryption fails)."""
 
 
 class InvalidEncryptedDataError(DecryptionError):
@@ -65,72 +67,29 @@ def encode_base64(text: BytesOrStrType) -> BytesOrStrType:
 	return base64.urlsafe_b64encode(text)
 
 
-def hash_password(password: str) -> str:
+def _derive_fernet_key(password: str, salt: bytes) -> bytes:
 	"""
-	Creates a hash of a password.
+	Derives a Fernet key using Argon2id from cryptography.
 
 	Args:
 		password: A password in plain text.
+		salt: A 16+ byte random salt.
 
 	Returns:
-		A password hash.
+		The generated Fernet key (base64 urlsafe encoded).
 	"""
-	hasher: argon2.PasswordHasher = argon2.PasswordHasher()
-	return hasher.hash(password)
-
-
-def verify_password(password: str, pw_hash: str) -> bool:
-	"""
-	Verifies a password against a hash.
-
-	Args:
-		password: A password in plain text.
-		pw_hash: A password hash.
-
-	Returns:
-		True if the password needs rehashing, False otherwise.
-
-	Raises:
-		WrongPasswordError: The data cannot be decrypted with password.
-		InvalidHashError: Invalid hash.
-	"""
-	hasher = argon2.PasswordHasher()
-	try:
-		hasher.verify(pw_hash, password)
-	except argon2.exceptions.VerifyMismatchError:
-		raise WrongPasswordError("Password does not match hash.") from None
-	except argon2.exceptions.InvalidHash:
-		raise InvalidHashError("Invalid hash.") from None
-	return hasher.check_needs_rehash(pw_hash)
-
-
-def generate_fernet_key(password: str, pw_hash: str) -> bytes:
-	"""
-	Generates a Fernet key (required when instantiating the Fernet class).
-
-	Args:
-		password: A password in plain text.
-		pw_hash: The Argon2 hash of the password.
-
-	Returns:
-		The generated Fernet key.
-	"""
-	parameters: argon2.Parameters = argon2.extract_parameters(pw_hash)
-	salt: str = pw_hash.split("$")[-2]
-	raw_hash: bytes = argon2.low_level.hash_secret_raw(
-		secret=bytes(password, "utf_16_le"),
-		salt=bytes(salt, "utf_16_le"),
-		time_cost=parameters.time_cost,
-		memory_cost=parameters.memory_cost,
-		parallelism=parameters.parallelism,
-		hash_len=parameters.hash_len,
-		type=parameters.type,
-		version=parameters.version,
+	kdf = Argon2id(
+		salt=salt,
+		length=32,
+		iterations=3,
+		lanes=4,
+		memory_cost=65536,
 	)
-	return base64.urlsafe_b64encode(raw_hash)
+	raw_key = kdf.derive(bytes(password, "utf-8"))
+	return base64.urlsafe_b64encode(raw_key)
 
 
-def encrypt(password: str, data: bytes) -> tuple[str, bytes]:
+def encrypt(password: str, data: bytes) -> tuple[bytes, bytes]:
 	"""
 	Encrypts data using a password.
 
@@ -139,35 +98,41 @@ def encrypt(password: str, data: bytes) -> tuple[str, bytes]:
 		data: The unencrypted data to be encrypted.
 
 	Returns:
-		A tuple containing an Argon2 hash and the associated encrypted data.
+		A tuple containing a base64-encoded salt and the associated encrypted data.
 	"""
-	pw_hash: str = hash_password(password)
-	key: bytes = generate_fernet_key(password, pw_hash)
+	salt: bytes = secrets.token_bytes(SALT_LENGTH)
+	key: bytes = _derive_fernet_key(password, salt)
 	fernet = Fernet(key)
 	encrypted_data: bytes = fernet.encrypt(data)
-	return pw_hash, encrypted_data
+	return base64.urlsafe_b64encode(salt), encrypted_data
 
 
-def decrypt(password: str, pw_hash: str, data: bytes) -> tuple[bytes, bool]:
+def decrypt(password: str, salt_b64: bytes | str, data: bytes) -> bytes:
 	"""
 	Decrypts data using a password.
 
 	Args:
 		password: A password in plain text.
-		pw_hash: The Argon2 hash associated with the encrypted data.
+		salt_b64: The base64-encoded salt returned by encrypt().
 		data: The encrypted data to be decrypted.
 
 	Returns:
-		A tuple containing the decrypted data, and a boolean representing if the password needs rehashing.
+		The decrypted data.
 
 	Raises:
+		WrongPasswordError: Incorrect password (decryption failed).
 		InvalidEncryptedDataError: Data to be decrypted is invalid.
 	"""
-	needs_rehash: bool = verify_password(password, pw_hash)
-	key: bytes = generate_fernet_key(password, pw_hash)
+	try:
+		salt: bytes = base64.urlsafe_b64decode(salt_b64)
+	except ValueError as e:
+		raise InvalidEncryptedDataError("Invalid salt format.") from e
+	if len(salt) < SALT_LENGTH:
+		raise InvalidEncryptedDataError("Salt too short.")
+	key: bytes = _derive_fernet_key(password, salt)
 	fernet = Fernet(key)
 	try:
 		decrypted_data: bytes = fernet.decrypt(data)
-	except InvalidToken:
-		raise InvalidEncryptedDataError("Data to be decrypted is invalid.") from None
-	return decrypted_data, needs_rehash
+	except InvalidToken as e:
+		raise WrongPasswordError("Incorrect password or corrupted data.") from e
+	return decrypted_data

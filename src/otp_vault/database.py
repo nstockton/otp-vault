@@ -1,4 +1,5 @@
-# Copyright (C) 2025 Nick Stockton
+# Copyright (C) 2026 Nick Stockton
+# SPDX-License-Identifier: MPL-2.0
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -16,6 +17,7 @@ import re
 import threading
 from collections.abc import Iterator, MutableMapping
 from itertools import starmap
+from secrets import compare_digest
 from typing import Any, NamedTuple
 
 # Third-party Modules:
@@ -85,8 +87,9 @@ class Database(MutableMapping[str, Any]):
 		return secrets
 
 	@staticmethod
-	def _get_checksum(data: bytes) -> str:
-		return hashlib.sha256(data).hexdigest().lower()
+	def _get_checksum(*args: bytes) -> bytes:
+		checksum: str = hashlib.sha256(b"\n".join(args)).hexdigest().lower()
+		return bytes(checksum, "utf-8")
 
 	@staticmethod
 	def _check_secret_label_whitespace(label: str) -> None:
@@ -129,12 +132,12 @@ class Database(MutableMapping[str, Any]):
 			raise DatabaseError(f"'{self.file_path}' is a directory, not a file.")
 		with self._database_lock:
 			with open(self.file_path, "rb") as f:
-				checksum: str = str(f.readline(), "utf-8").strip()
-				pw_hash: str = str(f.readline(), "utf-8").strip()
+				checksum: bytes = f.readline().strip()
+				salt_b64: bytes = f.readline().strip()
 				enc_data: bytes = f.read().strip()
-			if self._get_checksum(bytes(f"{pw_hash}\n", "utf-8") + enc_data) != checksum.lower():
+			if not compare_digest(self._get_checksum(salt_b64, enc_data), checksum.lower()):
 				raise DatabaseError(f"Corrupted database file: {self.file_path}.")
-			dec_data, needs_rehash = decrypt(password, pw_hash, enc_data)
+			dec_data = decrypt(password, salt_b64, enc_data)
 			self._database.update(json.loads(dec_data))
 			self._validate_json()
 			schema_version: str = self._database.pop("schema_version")  # NOQA: F841
@@ -142,10 +145,6 @@ class Database(MutableMapping[str, Any]):
 			secrets = sorted(self.secrets, key=lambda secret: secret[0].lower())
 			self.secrets.clear()
 			self.secrets.extend(starmap(Secret, secrets))
-		if needs_rehash:
-			# Default values for the password hasher have been updated since the database was last saved.
-			# Encrypt the database with the new values and save it to disk.
-			self.save(password)
 
 	def save(self, password: str) -> None:
 		"""
@@ -168,11 +167,11 @@ class Database(MutableMapping[str, Any]):
 			dec_data: bytes = bytes(
 				json.dumps(self._database, sort_keys=True, separators=(",", ":")), "utf-8"
 			)
-			pw_hash, enc_data = encrypt(password, dec_data)
-			checksum: str = self._get_checksum(bytes(f"{pw_hash}\n", "utf-8") + enc_data)
+			salt_b64, enc_data = encrypt(password, dec_data)
+			checksum: bytes = self._get_checksum(salt_b64, enc_data)
 			with open(self.file_path, "wb") as f:
-				f.write(bytes(f"{checksum}\n", "utf-8"))
-				f.write(bytes(f"{pw_hash}\n", "utf-8"))
+				f.write(checksum + b"\n")
+				f.write(salt_b64 + b"\n")
 				f.write(enc_data)
 
 	def add_secret(  # NOQA: PLR0913, PLR0917

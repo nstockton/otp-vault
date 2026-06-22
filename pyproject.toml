@@ -10,12 +10,11 @@
 	description = "A CLI-based OTP authenticator app."
 	license = {text = "MPL-2.0"}
 	readme = "README.md"
-	requires-python = ">=3.9,<4.0"
+	requires-python = ">=3.10,<4.0"
 	dependencies = [
-		"argon2-cffi>=23.1,<24.0",
-		"cryptography>=42.0,<43.0",
-		"fastjsonschema==2.21.1",
-		"knickknacks @ https://github.com/nstockton/knickknacks/releases/download/v0.5.0/knickknacks-0.5.0-py3-none-any.whl",
+		"cryptography>=49.0,<50.0",
+		"fastjsonschema>=2.21,<2.22",
+		"knickknacks>=0.8,<1.0",
 	]
 	dynamic = ["version"]
 	keywords = [
@@ -34,11 +33,11 @@
 		"Programming Language :: Python",
 		"Programming Language :: Python :: 3",
 		"Programming Language :: Python :: 3 :: Only",
-		"Programming Language :: Python :: 3.9",
 		"Programming Language :: Python :: 3.10",
 		"Programming Language :: Python :: 3.11",
 		"Programming Language :: Python :: 3.12",
 		"Programming Language :: Python :: 3.13",
+		"Programming Language :: Python :: 3.14",
 		"Programming Language :: Python :: Implementation",
 		"Programming Language :: Python :: Implementation :: CPython",
 		"Operating System :: MacOS",
@@ -64,15 +63,15 @@
 
 [dependency-groups]
 	dev = [
-		"pre-commit>=3.5,<4.0",
+		"prek>=0.3,<0.4",
 	]
 	lint = [
-		"isort>=5.13,<6.0",
-		"mypy>=1.14,<2.0",
-		"ruff>=0.9,<1.0",
+		"isort>=8.0,<9.0",
+		"mypy>=1.20,<2.0",
+		"ruff>=0.15,<1.0",
 	]
 	test = [
-		"coverage[toml]>=7.6,<8.0",
+		"coverage[toml]>=7.13,<8.0",
 	]
 
 [tool.pdm.build]
@@ -110,7 +109,7 @@
 [tool.ruff.format]
 	docstring-code-format = false
 	indent-style = "tab"
-	line-ending = "cr-lf"
+	line-ending = "lf"
 
 [tool.ruff.lint]
 	preview = true
@@ -134,8 +133,6 @@
 		"T20",  # Flake8-print.
 		"TCH",  # Flake8-type-checking.
 		"TRY003",  # Avoid specifying long messages outside the exception class.
-		"UP007",  # Use X | Y for union type annotations. (I hate this syntax)
-		"UP045",  # Use X | Y for optional type annotations. (I hate this syntax)
 		"W191",  # Indentation contains tabs.
 	]
 	typing-modules = [
@@ -158,8 +155,7 @@
 	max-complexity = 15
 
 [tool.ruff.lint.per-file-ignores]
-	"**/__init__.py" = ["D1"]
-	"**/__main__.py" = ["D1"]
+	"**/__init__.py" = ["D104", "RUF067"]
 	"**/_version.py" = ["CPY001"]
 	"./tests/**" = ["D1", "PLR0904", "PLR6301"]
 	"./src/otp_vault/database.py" = ["PTH"]  # Pathlib stuff. Fix this later.
@@ -227,7 +223,6 @@
 	import_heading_thirdparty = "Third-party Modules:"
 	# Override known third-party imports.
 	known_third_party = [
-		"argon2",
 		"cryptography",
 		"fastjsonschema",
 		"knickknacks",

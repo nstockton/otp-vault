@@ -1,4 +1,5 @@
-# Copyright (C) 2025 Nick Stockton
+# Copyright (C) 2026 Nick Stockton
+# SPDX-License-Identifier: MPL-2.0
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -12,7 +13,6 @@ from unittest import TestCase
 # OTP Vault Modules:
 from otp_vault.encryption import (
 	InvalidEncryptedDataError,
-	InvalidHashError,
 	WrongPasswordError,
 	decode_base64,
 	decrypt,
@@ -36,17 +36,16 @@ class TestEncryption(TestCase):
 		password: str = "test_password"  # NOQA: S105
 		unencrypted: bytes = b"Some data in plain text."
 		# Test encrypt.
-		pw_hash, encrypted_data = encrypt(password, unencrypted)
-		self.assertTrue(pw_hash.startswith("$argon2"))
+		salt_b64, encrypted_data = encrypt(password, unencrypted)
 		self.assertNotEqual(encrypted_data, unencrypted)
 		# Test decrypt with valid password, hash, and data.
-		self.assertEqual(decrypt(password, pw_hash, encrypted_data), (unencrypted, False))
+		self.assertEqual(decrypt(password, salt_b64, encrypted_data), unencrypted)
 		# Test decrypt with invalid password.
 		with self.assertRaises(WrongPasswordError):
-			self.assertEqual(decrypt("invalid_password", pw_hash, encrypted_data), (unencrypted, False))
-		# Test decrypt with invalid hash.
-		with self.assertRaises(InvalidHashError):
-			self.assertEqual(decrypt(password, "invalid_hash", encrypted_data), (unencrypted, False))
-		# Test decrypt with invalid encrypted data.
+			decrypt("invalid_password", salt_b64, encrypted_data)
+		# Test decrypt with invalid base64 salt.
 		with self.assertRaises(InvalidEncryptedDataError):
-			self.assertEqual(decrypt(password, pw_hash, b"invalid_encrypted_data"), (unencrypted, False))
+			decrypt(password, b"**junk123**", encrypted_data)
+		# Test decrypt with empty salt.
+		with self.assertRaises(InvalidEncryptedDataError):
+			decrypt(password, b"", encrypted_data)

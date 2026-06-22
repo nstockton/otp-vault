@@ -1,4 +1,5 @@
-# Copyright (C) 2025 Nick Stockton
+# Copyright (C) 2026 Nick Stockton
+# SPDX-License-Identifier: MPL-2.0
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -14,7 +15,7 @@ import ctypes
 import os
 import sys
 from collections.abc import Callable
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 from typing import get_args as get_type_args
 
 # Third-party Modules:
@@ -109,9 +110,9 @@ def search_secrets(  # NOQA: PLR0913
 	password: str,
 	text: str,
 	*,
-	copy: Optional[int] = None,
-	delete: Optional[int] = None,
-	update: Optional[tuple[int, str]] = None,
+	copy: int | None = None,
+	delete: int | None = None,
+	update: tuple[int, str] | None = None,
 ) -> None:
 	"""
 	Searches secrets in a database by label.
@@ -179,16 +180,16 @@ class ArgumentNamespace(argparse.Namespace):
 	"""The namespace to be used when parsing command line arguments."""
 
 	password: str
-	change_password: Optional[str] = None
-	add: Optional[tuple[str, str]] = None
+	change_password: str | None = None
+	add: tuple[str, str] | None = None
 	type: LITERAL_TOKEN_TYPES = "totp"
 	length: int = 6
 	initial_input: str = "0"
 	dump: bool = False
-	search: Optional[str] = None
-	copy: Optional[int] = None
-	delete: Optional[int] = None
-	update: Optional[tuple[int, str]] = None
+	search: str | None = None
+	copy: int | None = None
+	delete: int | None = None
+	update: tuple[int, str] | None = None
 
 
 def process_args(*args: str) -> tuple[argparse.Namespace, ERROR_TYPE]:

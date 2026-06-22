@@ -1,4 +1,5 @@
-# Copyright (C) 2025 Nick Stockton
+# Copyright (C) 2026 Nick Stockton
+# SPDX-License-Identifier: MPL-2.0
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -7,6 +8,7 @@
 from __future__ import annotations
 
 # Built-in Modules:
+import io
 from contextlib import ExitStack
 from unittest import TestCase
 from unittest.mock import Mock, mock_open, patch
@@ -20,7 +22,7 @@ SAMPLE_PASSWORD: str = "test_password"  # NOQA: S105
 SAMPLE_FILENAME: str = "testdatabase-6ca2100554e249998edbe204445a9875"
 
 
-@patch("otp_vault.main.sys.stdout", Mock())  # Prevent output from print.
+@patch("otp_vault.main.sys.stdout", io.StringIO())  # Prevent output from print.
 class TestMain(TestCase):
 	def test_change_password_when_valid_password(self) -> None:
 		mock_error_handler: Mock = Mock()

@@ -1,4 +1,5 @@
-# Copyright (C) 2025 Nick Stockton
+# Copyright (C) 2026 Nick Stockton
+# SPDX-License-Identifier: MPL-2.0
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -12,7 +13,7 @@ from __future__ import annotations
 import ctypes
 import sys
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 
 if sys.platform == "win32":
@@ -21,9 +22,9 @@ if sys.platform == "win32":
 
 def _decl(
 	func: Any,
-	restype: Optional[Any] = None,
-	argtypes: Optional[Sequence[Any]] = None,
-	errcheck: Optional[Any] = None,
+	restype: Any | None = None,
+	argtypes: Sequence[Any] | None = None,
+	errcheck: Any | None = None,
 ) -> Any:
 	if restype is not None:
 		func.restype = restype
@@ -97,7 +98,7 @@ def _set_clipboard_windows(text: str) -> bool:
 	if sys.platform == "win32":
 		data: bytes = bytes(text, "utf-16le")
 		OpenClipboard(None)
-		try:
+		try:  # NOQA: PLW0717
 			EmptyClipboard()
 			handle = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, len(data) + 2)
 			contents = GlobalLock(handle)
